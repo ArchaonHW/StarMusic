@@ -1,0 +1,89 @@
+.hero {
+  background:
+    radial-gradient(ellipse at 20% 30%, rgba(232, 62, 140, 0.35), transparent 55%),
+    radial-gradient(ellipse at 80% 20%, rgba(245, 197, 24, 0.15), transparent 50%),
+    linear-gradient(160deg, #1a1440, #0d0b1e);
+  padding: 90px 0;
+}
+
+.eyebrow {
+  color: var(--gold);
+  letter-spacing: 6px;
+  font-size: 12px;
+  margin: 0 0 10px;
+}
+
+.hero h1 {
+  font-size: 46px;
+  margin: 0 0 14px;
+  background: linear-gradient(90deg, #fff, var(--gold));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.slogan {
+  color: var(--text-dim);
+  font-size: 17px;
+  margin-bottom: 28px;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 14px;
+}
+
+.ticker {
+  background: var(--bg-soft);
+  border-bottom: 1px solid #2b2652;
+}
+
+.ticker-inner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 42px;
+  overflow: hidden;
+}
+
+.ticker-label {
+  background: var(--primary);
+  color: #fff;
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.ticker-items {
+  display: flex;
+  gap: 32px;
+  font-size: 13.5px;
+  white-space: nowrap;
+
+  a:hover {
+    color: var(--primary);
+  }
+}
+
+.channel .freq {
+  color: var(--gold);
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.live-dot {
+  color: #ff5252;
+  animation: blink 1.2s infinite;
+}
+
+.mags {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0.3;
+  }
+}

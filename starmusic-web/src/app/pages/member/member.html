@@ -1,0 +1,52 @@
+<div class="container page">
+  <h2 class="section-title">會員中心</h2>
+
+  @if (auth.member(); as m) {
+    <div class="profile">
+      <div class="avatar">★</div>
+      <div class="profile-info">
+        <h3>{{ m.nickname }} <span class="level">{{ m.level }}</span></h3>
+        <p>帳號：{{ m.username }} · 信箱：{{ m.email || '未設定' }}</p>
+        <button class="btn ghost" (click)="logout()">登出</button>
+      </div>
+    </div>
+    @if (message()) {
+      <p class="msg ok">{{ message() }}</p>
+    }
+  } @else {
+    <div class="form-card">
+      <div class="tabs">
+        <button [class.active]="mode === 'login'" (click)="mode = 'login'">登入</button>
+        <button [class.active]="mode === 'register'" (click)="mode = 'register'">註冊</button>
+      </div>
+
+      <form (ngSubmit)="submit()">
+        <label>帳號</label>
+        <input [(ngModel)]="username" name="username" required placeholder="試用帳號 starfan" />
+        <label>密碼</label>
+        <input
+          [(ngModel)]="password"
+          name="password"
+          type="password"
+          required
+          placeholder="試用密碼 123456"
+        />
+        @if (mode === 'register') {
+          <label>暱稱</label>
+          <input [(ngModel)]="nickname" name="nickname" placeholder="顯示名稱" />
+          <label>Email</label>
+          <input [(ngModel)]="email" name="email" type="email" placeholder="you@example.com" />
+        }
+        @if (error()) {
+          <p class="msg err">{{ error() }}</p>
+        }
+        @if (message()) {
+          <p class="msg ok">{{ message() }}</p>
+        }
+        <button class="btn submit" type="submit">
+          {{ mode === 'login' ? '登入' : '註冊' }}
+        </button>
+      </form>
+    </div>
+  }
+</div>

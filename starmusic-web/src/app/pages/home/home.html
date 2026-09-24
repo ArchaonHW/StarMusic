@@ -1,0 +1,104 @@
+<section class="hero">
+  <div class="container hero-inner">
+    <div class="hero-text">
+      <p class="eyebrow">STAR MUSIC GLOBAL</p>
+      <h1>星光全球娛樂台</h1>
+      <p class="slogan">影視 · 電台 · 新聞 · 雜誌 · 購物，一站擁有全球娛樂</p>
+      <div class="hero-actions">
+        <a class="btn" routerLink="/videos">立即觀看</a>
+        <a class="btn ghost" routerLink="/radio">收聽直播</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+@if (breaking().length > 0) {
+  <div class="ticker">
+    <div class="container ticker-inner">
+      <span class="ticker-label">快訊</span>
+      <div class="ticker-items">
+        @for (a of breaking(); track a.id) {
+          <a [routerLink]="['/news', a.id]">{{ a.title }}</a>
+        }
+      </div>
+    </div>
+  </div>
+}
+
+<div class="container">
+  <h2 class="section-title">熱播影視</h2>
+  <div class="grid">
+    @for (v of hotVideos(); track v.id) {
+      <a class="card" routerLink="/videos">
+        <div class="thumb">
+          @if (v.hot) {
+            <span class="badge">HOT</span>
+          }
+          {{ v.category }}
+        </div>
+        <div class="card-body">
+          <h3>{{ v.title }}</h3>
+          <p>{{ v.description }}</p>
+          <div class="meta">
+            <span>{{ v.duration }}</span>
+            <span>{{ formatViews(v.views) }} 次觀看</span>
+          </div>
+        </div>
+      </a>
+    }
+  </div>
+
+  <h2 class="section-title">星光電台 LIVE</h2>
+  <div class="grid">
+    @for (c of channels(); track c.id) {
+      <a class="card" routerLink="/radio">
+        <div class="card-body channel">
+          <div class="freq">{{ c.frequency }}</div>
+          <h3>{{ c.name }}</h3>
+          <p>{{ c.slogan }}</p>
+          <div class="meta">
+            <span>{{ c.genre }}</span>
+            @if (c.live) {
+              <span class="live-dot">● LIVE</span>
+            }
+          </div>
+        </div>
+      </a>
+    }
+  </div>
+
+  <h2 class="section-title">最新電子雜誌</h2>
+  <div class="grid mags">
+    @for (m of latestMagazines(); track m.id) {
+      <a class="card" routerLink="/magazines">
+        <div class="thumb book">
+          <span class="badge">{{ m.issueNo }}</span>
+          {{ m.title }}
+        </div>
+        <div class="card-body">
+          <h3>{{ m.coverStory }}</h3>
+          <div class="meta">
+            <span>{{ m.publishDate }}</span>
+            <span class="price">NT$ {{ m.price }}</span>
+          </div>
+        </div>
+      </a>
+    }
+  </div>
+
+  <h2 class="section-title">星光精選商品</h2>
+  <div class="grid">
+    @for (p of products(); track p.id) {
+      <a class="card" routerLink="/shop">
+        <div class="thumb">{{ p.category }}</div>
+        <div class="card-body">
+          <h3>{{ p.name }}</h3>
+          <div class="meta">
+            <span class="price">NT$ {{ p.price }}<del>NT$ {{ p.originalPrice }}</del></span>
+            <span>★ {{ p.rating }}</span>
+          </div>
+        </div>
+      </a>
+    }
+  </div>
+</div>

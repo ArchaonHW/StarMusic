@@ -1,0 +1,55 @@
+<div class="container page">
+  <h2 class="section-title">電子雜誌</h2>
+
+  <div class="tabs">
+    <button [class.active]="activeCategory() === ''" (click)="select('')">全部</button>
+    @for (c of categories(); track c) {
+      <button [class.active]="activeCategory() === c" (click)="select(c)">{{ c }}</button>
+    }
+  </div>
+
+  <div class="grid shelf">
+    @for (m of magazines(); track m.id) {
+      <div class="card" (click)="open(m)">
+        <div class="thumb book">
+          <span class="badge">{{ m.issueNo }}</span>
+          {{ m.title }}
+        </div>
+        <div class="card-body">
+          <h3>{{ m.coverStory }}</h3>
+          <div class="meta">
+            <span>{{ m.publishDate }}</span>
+            <span class="price">NT$ {{ m.price }}</span>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>
+
+@if (selected(); as m) {
+  <div class="overlay" (click)="close()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-cover">
+        <span class="badge">{{ m.issueNo }}</span>
+        <h3>{{ m.title }}</h3>
+      </div>
+      <div class="modal-body">
+        <p class="cover-story">{{ m.coverStory }}</p>
+        <ul class="highlights">
+          @for (h of m.highlights; track h) {
+            <li>{{ h }}</li>
+          }
+        </ul>
+        <div class="modal-foot">
+          <span class="price">NT$ {{ m.price }}</span>
+          <div>
+            <button class="btn">訂閱閱讀</button>
+            <button class="btn ghost" (click)="close()">關閉</button>
+          </div>
+        </div>
+        <p class="pub">發行日期：{{ m.publishDate }} · {{ m.category }}</p>
+      </div>
+    </div>
+  </div>
+}

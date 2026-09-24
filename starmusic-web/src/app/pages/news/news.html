@@ -1,0 +1,31 @@
+<div class="container page">
+  <h2 class="section-title">星光新聞</h2>
+
+  <div class="tabs">
+    <button [class.active]="activeCategory() === ''" (click)="select('')">全部</button>
+    @for (c of categories(); track c) {
+      <button [class.active]="activeCategory() === c" (click)="select(c)">{{ c }}</button>
+    }
+  </div>
+
+  <div class="news-list">
+    @for (a of articles(); track a.id) {
+      <a class="news-item" [routerLink]="['/news', a.id]">
+        <div class="news-thumb">{{ a.category }}</div>
+        <div class="news-body">
+          <div class="news-head">
+            @if (a.breaking) {
+              <span class="breaking">快訊</span>
+            }
+            <span class="cat">{{ a.category }}</span>
+            <time>{{ a.publishedAt | date: 'MM/dd HH:mm' }}</time>
+          </div>
+          <h3>{{ a.title }}</h3>
+          <p>{{ a.summary }}</p>
+        </div>
+      </a>
+    } @empty {
+      <p class="empty">此分類暫無新聞</p>
+    }
+  </div>
+</div>

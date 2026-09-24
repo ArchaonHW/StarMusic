@@ -1,0 +1,46 @@
+<div class="container page">
+  <h2 class="section-title">星光電台</h2>
+
+  <div class="channels">
+    @for (c of channels(); track c.id) {
+      <div class="channel-card" [class.active]="selected()?.id === c.id" (click)="pick(c)">
+        <div class="channel-top">
+          <span class="freq">{{ c.frequency }}</span>
+          @if (c.live) {
+            <span class="live-dot">● LIVE</span>
+          }
+        </div>
+        <h3>{{ c.name }}</h3>
+        <p>{{ c.slogan }}</p>
+        <div class="channel-bottom">
+          <span class="tag">{{ c.genre }}</span>
+          <button
+            class="play-btn"
+            [class.playing]="playing()?.id === c.id"
+            (click)="togglePlay(c); $event.stopPropagation()"
+          >
+            {{ playing()?.id === c.id ? '■ 停止' : '▶ 收聽' }}
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+
+  @if (selected(); as ch) {
+    <h2 class="section-title">{{ ch.name }} 節目表</h2>
+    <div class="program-list">
+      @for (p of programs(); track p.id) {
+        <div class="program">
+          <div class="time">{{ p.timeSlot }}</div>
+          <div class="info">
+            <h3>{{ p.title }} <span class="tag">{{ p.category }}</span></h3>
+            <p>{{ p.description }}</p>
+          </div>
+          <div class="dj">DJ {{ p.dj }}</div>
+        </div>
+      } @empty {
+        <p class="empty">此頻道暫無節目資料</p>
+      }
+    </div>
+  }
+</div>

@@ -1,0 +1,37 @@
+<div class="container page">
+  <h2 class="section-title">星光購物</h2>
+
+  <div class="tabs">
+    <button [class.active]="activeCategory() === ''" (click)="select('')">全部</button>
+    @for (c of categories(); track c) {
+      <button [class.active]="activeCategory() === c" (click)="select(c)">{{ c }}</button>
+    }
+  </div>
+
+  <div class="grid">
+    @for (p of products(); track p.id) {
+      <div class="card product">
+        <div class="thumb">
+          @if (p.price < p.originalPrice) {
+            <span class="badge">SALE</span>
+          }
+          {{ p.category }}
+        </div>
+        <div class="card-body">
+          <h3>{{ p.name }}</h3>
+          <p>{{ p.description }}</p>
+          <div class="meta">
+            <span class="price">NT$ {{ p.price }}<del>NT$ {{ p.originalPrice }}</del></span>
+            <span>★ {{ p.rating }}</span>
+          </div>
+          <div class="card-foot">
+            <span class="stock">庫存 {{ p.stock }}</span>
+            <button class="btn" (click)="addToCart(p)">
+              {{ addedId() === p.id ? '✓ 已加入' : '加入購物車' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>

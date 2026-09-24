@@ -1,0 +1,134 @@
+<div class="container page">
+  <h2 class="section-title">站內搜尋</h2>
+
+  @if (!keyword()) {
+    <p class="empty">請從上方搜尋框輸入關鍵字</p>
+  } @else if (loading()) {
+    <p class="empty">搜尋中…</p>
+  } @else if (result(); as r) {
+    <p class="summary">「{{ r.keyword }}」共找到 {{ r.total }} 筆結果</p>
+
+    @if (r.total === 0) {
+      <p class="empty">找不到相關內容，請換個關鍵字試試</p>
+    }
+
+    @if (r.videos.length) {
+      <section class="group">
+        <h3 class="group-title">影視 <span class="count">{{ r.videos.length }}</span></h3>
+        <div class="result-list">
+          @for (v of r.videos; track v.id) {
+            <a class="result-item" routerLink="/videos">
+              <div class="meta">
+                <span class="cat">{{ v.category }}</span>
+                @if (v.hot) {
+                  <span class="hot">HOT</span>
+                }
+                <span>{{ v.views | number }} 次觀看 · {{ v.duration }}</span>
+              </div>
+              <h4>{{ v.title }}</h4>
+              <p>{{ v.description }}</p>
+            </a>
+          }
+        </div>
+      </section>
+    }
+
+    @if (r.news.length) {
+      <section class="group">
+        <h3 class="group-title">新聞 <span class="count">{{ r.news.length }}</span></h3>
+        <div class="result-list">
+          @for (a of r.news; track a.id) {
+            <a class="result-item" [routerLink]="['/news', a.id]">
+              <div class="meta">
+                @if (a.breaking) {
+                  <span class="breaking">快訊</span>
+                }
+                <span class="cat">{{ a.category }}</span>
+                <time>{{ a.publishedAt | date: 'MM/dd HH:mm' }}</time>
+              </div>
+              <h4>{{ a.title }}</h4>
+              <p>{{ a.summary }}</p>
+            </a>
+          }
+        </div>
+      </section>
+    }
+
+    @if (r.magazines.length) {
+      <section class="group">
+        <h3 class="group-title">電子雜誌 <span class="count">{{ r.magazines.length }}</span></h3>
+        <div class="result-list">
+          @for (m of r.magazines; track m.id) {
+            <a class="result-item" routerLink="/magazines">
+              <div class="meta">
+                <span class="cat">{{ m.category }}</span>
+                <span>{{ m.issueNo }} · {{ m.publishDate }}</span>
+              </div>
+              <h4>{{ m.title }}</h4>
+              <p>{{ m.coverStory }}</p>
+            </a>
+          }
+        </div>
+      </section>
+    }
+
+    @if (r.products.length) {
+      <section class="group">
+        <h3 class="group-title">購物 <span class="count">{{ r.products.length }}</span></h3>
+        <div class="result-list">
+          @for (p of r.products; track p.id) {
+            <a class="result-item" routerLink="/shop">
+              <div class="meta">
+                <span class="cat">{{ p.category }}</span>
+                <span class="price">NT$ {{ p.price | number }}</span>
+              </div>
+              <h4>{{ p.name }}</h4>
+              <p>{{ p.description }}</p>
+            </a>
+          }
+        </div>
+      </section>
+    }
+
+    @if (r.channels.length) {
+      <section class="group">
+        <h3 class="group-title">電台頻道 <span class="count">{{ r.channels.length }}</span></h3>
+        <div class="result-list">
+          @for (c of r.channels; track c.id) {
+            <a class="result-item" routerLink="/radio">
+              <div class="meta">
+                <span class="cat">{{ c.genre }}</span>
+                @if (c.live) {
+                  <span class="live">LIVE</span>
+                }
+                <span>{{ c.frequency }}</span>
+              </div>
+              <h4>{{ c.name }}</h4>
+              <p>{{ c.slogan }}</p>
+            </a>
+          }
+        </div>
+      </section>
+    }
+
+    @if (r.programs.length) {
+      <section class="group">
+        <h3 class="group-title">電台節目 <span class="count">{{ r.programs.length }}</span></h3>
+        <div class="result-list">
+          @for (p of r.programs; track p.id) {
+            <a class="result-item" routerLink="/radio">
+              <div class="meta">
+                <span class="cat">{{ p.category }}</span>
+                <span>DJ {{ p.dj }} · {{ p.timeSlot }}</span>
+              </div>
+              <h4>{{ p.title }}</h4>
+              <p>{{ p.description }}</p>
+            </a>
+          }
+        </div>
+      </section>
+    }
+  } @else {
+    <p class="empty">搜尋服務暫時無法使用，請確認 star-search-service 已啟動</p>
+  }
+</div>

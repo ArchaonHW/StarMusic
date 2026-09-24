@@ -1,0 +1,34 @@
+<div class="container page">
+  <h2 class="section-title">購物車</h2>
+
+  @if (order(); as o) {
+    <div class="done">
+      <h3>✓ 訂單成立！</h3>
+      <p>訂單編號：{{ o.id }} · 金額 NT$ {{ o.total }}</p>
+      <a class="btn" routerLink="/shop">繼續購物</a>
+    </div>
+  } @else {
+    @if (cartService.cart().items.length === 0) {
+      <div class="empty-cart">
+        <p>購物車是空的</p>
+        <a class="btn" routerLink="/shop">去逛逛</a>
+      </div>
+    } @else {
+      <div class="cart-list">
+        @for (item of cartService.cart().items; track item.productId) {
+          <div class="cart-item">
+            <div class="item-name">{{ item.name }}</div>
+            <div class="item-qty">x {{ item.quantity }}</div>
+            <div class="item-price">NT$ {{ item.price * item.quantity }}</div>
+            <button class="remove" (click)="remove(item.productId)">✕</button>
+          </div>
+        }
+      </div>
+      <div class="cart-summary">
+        <span>總計</span>
+        <span class="price">NT$ {{ cartService.cart().total }}</span>
+        <button class="btn" (click)="checkout()">結帳</button>
+      </div>
+    }
+  }
+</div>

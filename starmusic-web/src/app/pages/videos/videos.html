@@ -1,0 +1,55 @@
+<div class="container page">
+  <h2 class="section-title">影視頻道</h2>
+
+  <div class="tabs">
+    <button [class.active]="activeCategory() === ''" (click)="select('')">全部</button>
+    @for (c of categories(); track c) {
+      <button [class.active]="activeCategory() === c" (click)="select(c)">{{ c }}</button>
+    }
+  </div>
+
+  <div class="layout">
+    <div class="main-col grid">
+      @for (v of videos(); track v.id) {
+        <div class="card">
+          <div class="thumb">
+            @if (v.hot) {
+              <span class="badge">HOT</span>
+            }
+            {{ v.category }}
+          </div>
+          <div class="card-body">
+            <h3>{{ v.title }}</h3>
+            <p>{{ v.description }}</p>
+            <div class="tags">
+              @for (t of v.tags; track t) {
+                <span class="tag">{{ t }}</span>
+              }
+            </div>
+            <div class="meta">
+              <span>{{ v.duration }}</span>
+              <span>{{ formatViews(v.views) }} 次觀看</span>
+            </div>
+          </div>
+        </div>
+      } @empty {
+        <p class="empty">此分類暫無影片</p>
+      }
+    </div>
+
+    <aside class="side-col">
+      <h3>觀看排行</h3>
+      <ol class="rank-list">
+        @for (r of ranking(); track r.id; let i = $index) {
+          <li>
+            <span class="rank-no" [class.top]="i < 3">{{ i + 1 }}</span>
+            <div>
+              <p class="rank-title">{{ r.title }}</p>
+              <span class="rank-views">{{ formatViews(r.views) }} 次觀看</span>
+            </div>
+          </li>
+        }
+      </ol>
+    </aside>
+  </div>
+</div>

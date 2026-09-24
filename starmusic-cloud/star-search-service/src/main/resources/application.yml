@@ -1,0 +1,11 @@
+server:
+  port: 8087
+
+spring:
+  application:
+    name: star-search-service
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
