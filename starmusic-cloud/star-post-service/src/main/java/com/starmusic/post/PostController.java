@@ -452,10 +452,6 @@ public class PostController {
         }
     }
 
-    private Page<PostDto> toDtoPage(Page<PostEntity> page) {
-        return page.map(e -> PostDto.of(e, likes.countByPostId(e.getId())));
-    }
-
     private Page<PostDto> withLikes(Page<PostEntity> page) {
         return new PageImpl<>(withLikes(page.getContent()),
                 page.getPageable(), page.getTotalElements());
