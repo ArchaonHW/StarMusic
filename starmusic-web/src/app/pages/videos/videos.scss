@@ -2,6 +2,94 @@
   padding-bottom: 40px;
 }
 
+.upload-box {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  margin-bottom: 20px;
+
+  summary {
+    cursor: pointer;
+    font-size: 14.5px;
+    font-weight: 600;
+    color: var(--gold);
+  }
+}
+
+.upload-form {
+  display: grid;
+  grid-template-columns: 1fr 160px;
+  gap: 10px;
+  margin-top: 14px;
+
+  input,
+  select {
+    margin: 0;
+  }
+
+  .btn {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}
+
+.upload-msg {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 13px;
+  color: var(--gold);
+}
+
+.my-uploads {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 12px 0 0;
+  border-top: 1px solid #2b2652;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    font-size: 13.5px;
+    flex-wrap: wrap;
+  }
+}
+
+.st {
+  font-size: 11px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  background: #3a3468;
+  color: var(--text-dim);
+
+  &.PENDING {
+    background: rgba(245, 197, 24, 0.18);
+    color: var(--gold);
+  }
+
+  &.APPROVED {
+    background: rgba(105, 219, 124, 0.15);
+    color: #69db7c;
+  }
+
+  &.REJECTED {
+    background: rgba(255, 82, 82, 0.15);
+    color: #ff7070;
+  }
+}
+
+.dim {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.note {
+  color: #ff7070;
+  font-size: 12px;
+  width: 100%;
+}
+
 .layout {
   display: grid;
   grid-template-columns: 1fr 280px;
@@ -35,9 +123,14 @@
     gap: 12px;
     padding: 10px 0;
     border-bottom: 1px solid #2b2652;
+    cursor: pointer;
 
     &:last-child {
       border-bottom: none;
+    }
+
+    &:hover .rank-title {
+      color: var(--primary);
     }
   }
 }

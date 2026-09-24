@@ -12,9 +12,20 @@
         <span>{{ a.source }} · {{ a.author }}</span>
         <time>{{ a.publishedAt | date: 'yyyy年MM月dd日 HH:mm' }}</time>
       </div>
-      <div class="hero-img">{{ a.category }}</div>
+      @if (a.imageUrls.length) {
+        <img class="hero-photo" [src]="a.imageUrls[0]" [alt]="a.title" />
+      } @else {
+        <div class="hero-img">{{ a.category }}</div>
+      }
       <p class="lead">{{ a.summary }}</p>
       <p class="content">{{ a.content }}</p>
+      @if (a.imageUrls.length > 1) {
+        <div class="gallery">
+          @for (img of a.imageUrls.slice(1); track img) {
+            <img [src]="img" [alt]="a.title" />
+          }
+        </div>
+      }
       <a class="btn ghost back" routerLink="/news">← 返回新聞列表</a>
     </article>
   } @else {

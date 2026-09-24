@@ -6,42 +6,48 @@ spring:
     name: star-gateway
   cloud:
     gateway:
-      globalcors:
-        cors-configurations:
-          '[/**]':
-            allowed-origins: "http://localhost:4200"
-            allowed-methods: "*"
-            allowed-headers: "*"
-            allow-credentials: true
-      routes:
-        - id: video-service
-          uri: lb://star-video-service
-          predicates:
-            - Path=/api/videos/**
-        - id: radio-service
-          uri: lb://star-radio-service
-          predicates:
-            - Path=/api/radio/**
-        - id: news-service
-          uri: lb://star-news-service
-          predicates:
-            - Path=/api/news/**
-        - id: magazine-service
-          uri: lb://star-magazine-service
-          predicates:
-            - Path=/api/magazines/**
-        - id: shop-service
-          uri: lb://star-shop-service
-          predicates:
-            - Path=/api/products/**,/api/cart/**,/api/orders/**
-        - id: member-service
-          uri: lb://star-member-service
-          predicates:
-            - Path=/api/members/**
-        - id: search-service
-          uri: lb://star-search-service
-          predicates:
-            - Path=/api/search/**
+      server:
+        webflux:
+          default-filters:
+            - AddResponseHeader=X-Content-Type-Options, nosniff
+            - AddResponseHeader=X-Frame-Options, DENY
+            - AddResponseHeader=Referrer-Policy, strict-origin-when-cross-origin
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowed-origins: "http://localhost:4200"
+                allowed-methods: "GET,POST,PUT,DELETE,OPTIONS"
+                allowed-headers: "Content-Type,Authorization"
+                allow-credentials: false
+          routes:
+            - id: video-service
+              uri: lb://star-video-service
+              predicates:
+                - Path=/api/videos/**
+            - id: radio-service
+              uri: lb://star-radio-service
+              predicates:
+                - Path=/api/radio/**
+            - id: news-service
+              uri: lb://star-news-service
+              predicates:
+                - Path=/api/news/**
+            - id: magazine-service
+              uri: lb://star-magazine-service
+              predicates:
+                - Path=/api/magazines/**
+            - id: shop-service
+              uri: lb://star-shop-service
+              predicates:
+                - Path=/api/products/**,/api/cart/**,/api/orders/**
+            - id: member-service
+              uri: lb://star-member-service
+              predicates:
+                - Path=/api/members/**
+            - id: search-service
+              uri: lb://star-search-service
+              predicates:
+                - Path=/api/search/**
 
 eureka:
   client:

@@ -75,4 +75,125 @@
   padding: 2px 8px;
   vertical-align: middle;
   margin-left: 8px;
+
+  &.admin {
+    background: var(--primary);
+    color: #fff;
+  }
+}
+
+.balance {
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.dim {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.sub-title {
+  margin: 32px 0 14px;
+  font-size: 17px;
+  color: var(--gold);
+}
+
+.tx-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  overflow: hidden;
+
+  th,
+  td {
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid #2b2652;
+  }
+
+  th {
+    color: var(--text-dim);
+    font-weight: 500;
+    font-size: 12px;
+  }
+
+  .amt {
+    color: #69db7c;
+
+    &.neg {
+      color: #ff7070;
+    }
+  }
+}
+
+.tx-type {
+  background: var(--primary-soft);
+  color: var(--primary);
+  border-radius: 8px;
+  padding: 2px 8px;
+  font-size: 11px;
+}
+
+.review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.review-item {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+
+  .review-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+
+  p {
+    margin: 0 0 12px;
+    font-size: 12.5px;
+  }
+}
+
+.review-actions {
+  display: flex;
+  gap: 10px;
+
+  input {
+    flex: 1;
+    margin: 0;
+  }
+}
+
+.adjust-cell {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+
+  input[type='number'] {
+    width: 90px;
+    margin: 0;
+  }
+
+  input:not([type='number']) {
+    width: 140px;
+    margin: 0;
+  }
+
+  .btn {
+    padding: 6px 14px;
+    font-size: 12px;
+  }
+}
+
+.empty {
+  color: var(--text-dim);
+  font-size: 13px;
+  padding: 12px 0;
 }

@@ -1,0 +1,39 @@
+<div class="container page">
+  @if (notFound()) {
+    <div class="empty">
+      <p>找不到這部影片</p>
+      <a class="btn ghost" routerLink="/videos">← 返回影視頻道</a>
+    </div>
+  } @else if (video(); as v) {
+    <div class="player-wrap">
+      @if (v.videoUrl) {
+        <video class="player" [src]="v.videoUrl" controls autoplay muted playsinline></video>
+      } @else {
+        <div class="no-source">
+          <span>{{ v.category }}</span>
+          <p>此影片暫未提供線上播放</p>
+        </div>
+      }
+    </div>
+
+    <div class="info">
+      <div class="head">
+        <h1>{{ v.title }}</h1>
+        @if (v.hot) {
+          <span class="hot-badge">HOT</span>
+        }
+      </div>
+      <div class="meta-line">
+        <span class="tag">{{ v.category }}</span>
+        @for (t of v.tags; track t) {
+          <span class="tag">{{ t }}</span>
+        }
+        <span class="views">{{ formatViews(v.views) }} 次觀看 · {{ v.duration }}</span>
+      </div>
+      <p class="desc">{{ v.description }}</p>
+      <a class="btn ghost" routerLink="/videos">← 返回影視頻道</a>
+    </div>
+  } @else {
+    <p class="empty">載入中…</p>
+  }
+</div>

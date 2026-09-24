@@ -1,8 +1,9 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
+  AccountTransaction,
   Article,
   Channel,
   Magazine,
@@ -10,7 +11,8 @@ import {
   Product,
   Program,
   SearchResult,
-  Video
+  Video,
+  VideoUpload
 } from '../models';
 
 @Injectable({ providedIn: 'root' })
@@ -20,6 +22,10 @@ export class ApiService {
 
   videos(category?: string): Observable<Video[]> {
     return this.http.get<Video[]>(`${this.base}/videos`, { params: this.p({ category }) });
+  }
+
+  video(id: number): Observable<Video> {
+    return this.http.get<Video>(`${this.base}/videos/${id}`);
   }
 
   videoCategories(): Observable<string[]> {
@@ -82,6 +88,71 @@ export class ApiService {
     return this.http.get<SearchResult>(`${this.base}/search`, { params: this.p({ q }) });
   }
 
+  uploadVideo(file: File, meta: { title: string; category?: string; description?: string }) {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('title', meta.title);
+    if (meta.category) {
+      fd.append('category', meta.category);
+    }
+    if (meta.description) {
+      fd.append('description', meta.description);
+    }
+    return this.http.post<VideoUpload>(`${this.base}/videos/uploads`, fd, {
+      headers: this.authHeaders()
+    });
+  }
+
+  myUploads(): Observable<VideoUpload[]> {
+    return this.http.get<VideoUpload[]>(`${this.base}/videos/uploads/mine`, {
+      headers: this.authHeaders()
+    });
+  }
+
+  adminUploads(status?: string): Observable<VideoUpload[]> {
+    return this.http.get<VideoUpload[]>(`${this.base}/videos/uploads`, {
+      params: this.p({ status }),
+      headers: this.authHeaders()
+    });
+  }
+
+  approveUpload(id: number, note?: string): Observable<VideoUpload> {
+    return this.http.post<VideoUpload>(
+      `${this.base}/videos/uploads/${id}/approve`,
+      { note },
+      { headers: this.authHeaders() }
+    );
+  }
+
+  rejectUpload(id: number, note?: string): Observable<VideoUpload> {
+    return this.http.post<VideoUpload>(
+      `${this.base}/videos/uploads/${id}/reject`,
+      { note },
+      { headers: this.authHeaders() }
+    );
+  }
+
+  members(): Observable<Member[]> {
+    return this.http.get<Member[]>(`${this.base}/members`, { headers: this.authHeaders() });
+  }
+
+  transactions(memberId: number): Observable<AccountTransaction[]> {
+    return this.http.get<AccountTransaction[]>(`${this.base}/members/${memberId}/transactions`, {
+      headers: this.authHeaders()
+    });
+  }
+
+  addTransaction(
+    memberId: number,
+    req: { type: string; amount: number; note?: string }
+  ): Observable<AccountTransaction> {
+    return this.http.post<AccountTransaction>(
+      `${this.base}/members/${memberId}/transactions`,
+      req,
+      { headers: this.authHeaders() }
+    );
+  }
+
   register(req: {
     username: string;
     password: string;
@@ -96,6 +167,23 @@ export class ApiService {
       username,
       password
     });
+  }
+
+  me(): Observable<Member> {
+    return this.http.get<Member>(`${this.base}/members/me`, { headers: this.authHeaders() });
+  }
+
+  logout(): Observable<void> {
+    return this.http.post<void>(`${this.base}/members/logout`, {}, {
+      headers: this.authHeaders()
+    });
+  }
+
+  private authHeaders(): HttpHeaders {
+    const token = localStorage.getItem('star-token');
+    return token
+      ? new HttpHeaders().set('Authorization', `Bearer ${token}`)
+      : new HttpHeaders();
   }
 
   private p(params: Record<string, unknown>): HttpParams {

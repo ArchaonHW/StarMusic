@@ -16,7 +16,15 @@ public class NewsController {
 
     public record Article(long id, String title, String category, String summary,
                           String content, String source, String author,
-                          String imageUrl, String publishedAt, boolean breaking) {
+                          String imageUrl, List<String> imageUrls,
+                          String publishedAt, boolean breaking) {
+
+        public Article(long id, String title, String category, String summary,
+                       String content, String source, String author,
+                       String imageUrl, String publishedAt, boolean breaking) {
+            this(id, title, category, summary, content, source, author,
+                    imageUrl, List.of(), publishedAt, breaking);
+        }
     }
 
     private static final List<Article> ARTICLES = List.of(
@@ -59,7 +67,26 @@ public class NewsController {
                     "星光電子雜誌歡慶十週年，推出收錄歷年經典封面的數位典藏版供訂戶免費下載。",
                     "星光電子雜誌歡慶創刊十週年，宣布推出收錄歷年 120 期經典封面的數位典藏版，訂戶可免費下載收藏，並同步推出十週年紀念專刊。",
                     "星光全球娛樂台", "記者林小星", "/assets/news/magazine.jpg",
-                    "2026-09-19T10:00:00", false)
+                    "2026-09-19T10:00:00", false),
+            new Article(9, "海饌宴會館盛大開幕 打造板橋餐飲宴會新地標", "活動",
+                    "「海饌宴會館」9月21日於新北市板橋區盛大開幕，占地550坪、設10間獨立包廂及大型宴會空間，提供桌菜、港式點心、下午茶與歡唱服務。",
+                    """
+                    【新北市訊】位於新北市板橋區重慶路247號2樓的「海饌宴會館」，於民國115年9月21日中午11時舉行開幕典禮。剪綵貴賓包括國際獅子會300複合區國際理事邱銘乾博士、300B 2區前總監徐淑珍、新北市議員曾煥嘉、板橋廣德里里長周建和及板橋振興里里長柯仁傑，與各界嘉賓共同見證海饌正式啟航。
+
+                    海饌宴會館占地約550坪，設有10間獨立包廂及大型宴會空間，提供桌菜、單點料理、港式點心、下午茶及歡唱服務，適合婚宴、壽宴、公司聚餐、社團會議與各類活動。
+
+                    運營總監林均霖教授受訪表示：「海饌不只是一間餐廳，更是一個讓親友相聚、社團交流及公益活動都能自在舉辦的平台。我們將以美食連結人情、以歌聲傳遞歡樂，用真誠服務每一位顧客，讓海饌成為板橋充滿溫度的新地標。」
+
+                    未來，海饌宴會館將持續結合餐飲、宴會、歌唱、藝文及公益活動，為民眾打造多元、歡樂且溫馨的聚會空間。
+
+                    地址：新北市板橋區重慶路247號2樓
+                    訂位專線：02-8952-6168
+                    LINE ID：@616mrucc
+                    """,
+                    "星光全球娛樂台", "記者綜合報導", "/media/haizan-opening-1.jpg",
+                    List.of("/media/haizan-opening-1.jpg", "/media/haizan-opening-2.jpg",
+                            "/media/haizan-opening-3.jpg", "/media/haizan-opening-4.jpg"),
+                    "2026-09-24T10:30:00", false)
     );
 
     @GetMapping

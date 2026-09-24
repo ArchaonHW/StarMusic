@@ -1,6 +1,43 @@
 <div class="container page">
   <h2 class="section-title">影視頻道</h2>
 
+  @if (auth.member()) {
+    <details class="upload-box">
+      <summary>📤 上傳影片（送管理員審核）</summary>
+      <div class="upload-form">
+        <input [(ngModel)]="uploadTitle" placeholder="影片標題（必填）" />
+        <select [(ngModel)]="uploadCategory">
+          <option value="">選擇分類</option>
+          @for (c of categories(); track c) {
+            <option [value]="c">{{ c }}</option>
+          }
+        </select>
+        <input [(ngModel)]="uploadDesc" placeholder="影片簡介" />
+        <input type="file" accept="video/*" (change)="onFile($event)" />
+        <button class="btn" [disabled]="uploading()" (click)="submitUpload()">
+          {{ uploading() ? '上傳中…' : '送出審核' }}
+        </button>
+        @if (uploadMsg()) {
+          <p class="upload-msg">{{ uploadMsg() }}</p>
+        }
+      </div>
+      @if (myUploads().length > 0) {
+        <ul class="my-uploads">
+          @for (u of myUploads(); track u.id) {
+            <li>
+              <span class="st" [class]="'st ' + u.status">{{ statusLabel(u.status) }}</span>
+              {{ u.title }}
+              <span class="dim">{{ u.createdAt | date: 'MM/dd HH:mm' }}</span>
+              @if (u.status === 'REJECTED' && u.reviewNote) {
+                <span class="note">退回原因：{{ u.reviewNote }}</span>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </details>
+  }
+
   <div class="tabs">
     <button [class.active]="activeCategory() === ''" (click)="select('')">全部</button>
     @for (c of categories(); track c) {
@@ -11,7 +48,7 @@
   <div class="layout">
     <div class="main-col grid">
       @for (v of videos(); track v.id) {
-        <div class="card">
+        <a class="card" [routerLink]="['/videos', v.id]">
           <div class="thumb">
             @if (v.hot) {
               <span class="badge">HOT</span>
@@ -31,7 +68,7 @@
               <span>{{ formatViews(v.views) }} 次觀看</span>
             </div>
           </div>
-        </div>
+        </a>
       } @empty {
         <p class="empty">此分類暫無影片</p>
       }
@@ -41,7 +78,7 @@
       <h3>觀看排行</h3>
       <ol class="rank-list">
         @for (r of ranking(); track r.id; let i = $index) {
-          <li>
+          <li [routerLink]="['/videos', r.id]">
             <span class="rank-no" [class.top]="i < 3">{{ i + 1 }}</span>
             <div>
               <p class="rank-title">{{ r.title }}</p>

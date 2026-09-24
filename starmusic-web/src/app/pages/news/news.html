@@ -11,7 +11,13 @@
   <div class="news-list">
     @for (a of articles(); track a.id) {
       <a class="news-item" [routerLink]="['/news', a.id]">
-        <div class="news-thumb">{{ a.category }}</div>
+        <div class="news-thumb">
+          @if (a.imageUrls.length) {
+            <img [src]="a.imageUrls[0]" [alt]="a.title" />
+          } @else {
+            {{ a.category }}
+          }
+        </div>
         <div class="news-body">
           <div class="news-head">
             @if (a.breaking) {

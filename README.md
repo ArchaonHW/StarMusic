@@ -2,7 +2,8 @@
 
 廣播、新聞、TV、雜誌、購物、會員 — 娛樂入口網站雛形。
 
-- 後端：Spring Boot 3.3 + Spring Cloud 2023（Eureka + Gateway + 七個微服務）
+- 後端：Spring Boot 3.5 + Spring Cloud 2025（Eureka + Gateway + 七個微服務）
+- 資料庫：H2（檔案型持久化）— member-service 會員/帳務、video-service 上傳審核
 - 前端：Angular 20（Standalone Components + Signals + SCSS）
 
 ## 專案結構
@@ -59,6 +60,7 @@ npm start          # http://localhost:4200
 | ----------- | ------------------------------------- |
 | `/`         | 首頁：Hero、快訊跑馬燈、各頻道精選    |
 | `/videos`   | 影視：分類篩選 + 觀看排行             |
+| `/videos/:id` | 影片播放頁（支援 mp4 串流播放）     |
 | `/radio`    | 電台：頻道列表、節目表、播放按鈕 stub |
 | `/news`     | 新聞：分類篩選、快訊標籤              |
 | `/news/:id` | 新聞詳情                              |
@@ -70,9 +72,33 @@ npm start          # http://localhost:4200
 
 ## 測試帳號
 
-- 帳號：`starfan` / 密碼：`123456`（會員服務內建 demo 帳號）
+| 帳號 | 密碼 | 角色 | 說明 |
+| --- | --- | --- | --- |
+| `starfan` | `STARMUSIC_DEMO_PASSWORD` 環境變數 | MEMBER | demo 會員（內建餘額與帳務紀錄） |
+| `admin` | `STARMUSIC_ADMIN_PASSWORD` 環境變數 | ADMIN | 管理員：審核影片、調整會員帳務、查看全部會員 |
+
+> 未設定環境變數時，種子密碼為啟動日誌中自動產生的隨機值（搜尋 `[DEV]` 字樣）。
+
+## 會員上傳與審核流程
+
+1. 會員登入後到「影視」頁 → 展開「上傳影片」→ 填標題/分類/簡介並選擇影片檔 → 送出（狀態：待審核）
+2. 管理員（admin）登入後到「會員中心」→「待審核影片」→ 通過上架或退回（可填備註）
+3. 審核通過的影片自動出現在影視列表，可線上播放（檔案由 video-service 串流，支援 Range）
+
+帳務：會員中心顯示餘額與交易明細；管理員可對任一會員儲值/扣款（寫入 `account_transactions` 並更新餘額）。
+
+- H2 資料檔：`star-member-service/data/`（members、account_transactions、auth_tokens）、`star-video-service/data/`（video_uploads）
+- 上傳檔案存放：`star-video-service/uploads/`，經 `/api/videos/files/{檔名}` 串流（支援 HTTP Range）
+
+## 認證與權限
+
+- 登入後取得 `Bearer` token（`star-*`，7 天效期，存於 `auth_tokens` 表）；前端所有需身分的請求只帶 `Authorization` 標頭
+- Gateway 的 `AuthRelayFilter` 會剔除客戶端偽造的 `X-User-*` 標頭，並以 token 向 member-service `/api/members/me` 換取身分，注入 `X-User-Id` / `X-User-Name` / `X-User-Role` 給下游服務
+- 密碼以 BCrypt 雜湊儲存；登入失敗 5 次/5 分鐘會被限流
+- 種子帳號密碼由環境變數決定：`STARMUSIC_ADMIN_PASSWORD`、`STARMUSIC_DEMO_PASSWORD`（未設定時自動產生隨機密碼並印在啟動日誌）
+- 資料庫密碼：`STARMUSIC_DB_PASSWORD`（預設空）
 
 ## 備註
 
-- 目前為雛形：資料皆為各服務記憶體中的種子資料，重啟即重置；尚未接資料庫、串流與金流。
+- 目前為雛形：影視/電台/新聞/雜誌/商品為記憶體種子資料；會員、帳務、影片上傳已接 H2 資料庫持久化。
 - 後續可加入：Spring Cloud Config、Resilience4j 熔斷、Spring Security + JWT、MySQL/Redis、OpenFeign 服務間呼叫。

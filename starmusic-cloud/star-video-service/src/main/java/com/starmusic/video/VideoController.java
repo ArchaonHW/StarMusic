@@ -1,5 +1,6 @@
 package com.starmusic.video;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/api/videos")
@@ -56,10 +58,19 @@ public class VideoController {
                     List.of("LIVE", "演唱會"), true, null)
     );
 
+    private final VideoUploadRepository uploads;
+    private final String mediaBase;
+
+    public VideoController(VideoUploadRepository uploads,
+                           @Value("${starmusic.media-base:http://localhost:8080}") String mediaBase) {
+        this.uploads = uploads;
+        this.mediaBase = mediaBase;
+    }
+
     @GetMapping
     public List<Video> list(@RequestParam(required = false) String category,
                             @RequestParam(required = false) Boolean hot) {
-        return VIDEOS.stream()
+        return all()
                 .filter(v -> category == null || v.category().equals(category))
                 .filter(v -> hot == null || v.hot() == hot)
                 .toList();
@@ -67,7 +78,7 @@ public class VideoController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Video> get(@PathVariable long id) {
-        return VIDEOS.stream()
+        return all()
                 .filter(v -> v.id() == id)
                 .findFirst()
                 .map(ResponseEntity::ok)
@@ -76,14 +87,28 @@ public class VideoController {
 
     @GetMapping("/categories")
     public List<String> categories() {
-        return VIDEOS.stream().map(Video::category).distinct().toList();
+        return all().map(Video::category).distinct().toList();
     }
 
     @GetMapping("/ranking")
     public List<Video> ranking() {
-        return VIDEOS.stream()
+        return all()
                 .sorted(Comparator.comparingLong(Video::views).reversed())
                 .limit(10)
                 .toList();
+    }
+
+    private Stream<Video> all() {
+        return Stream.concat(
+                VIDEOS.stream(),
+                uploads.findByStatus(VideoUpload.APPROVED).stream().map(this::fromUpload));
+    }
+
+    private Video fromUpload(VideoUpload u) {
+        return new Video(10000 + u.getId(), u.getTitle(),
+                u.getCategory() == null ? "會員上傳" : u.getCategory(), null,
+                u.getDescription() == null ? "" : u.getDescription(),
+                "—", 0, List.of("會員上傳", "by " + u.getUploader()), false,
+                mediaBase + "/api/videos/files/" + u.getFilename());
     }
 }

@@ -8,6 +8,7 @@ export interface Video {
   views: number;
   tags: string[];
   hot: boolean;
+  videoUrl: string | null;
 }
 
 export interface Channel {
@@ -39,6 +40,7 @@ export interface Article {
   source: string;
   author: string;
   imageUrl: string;
+  imageUrls: string[];
   publishedAt: string;
   breaking: boolean;
 }
@@ -92,7 +94,32 @@ export interface Member {
   username: string;
   nickname: string;
   email: string;
+  role: 'MEMBER' | 'ADMIN';
   level: string;
+  balance: number;
+  createdAt: string;
+}
+
+export interface VideoUpload {
+  id: number;
+  title: string;
+  category: string;
+  description: string;
+  originalFilename: string;
+  uploader: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  reviewNote: string;
+  createdAt: string;
+  reviewedAt: string | null;
+}
+
+export interface AccountTransaction {
+  id: number;
+  type: 'TOPUP' | 'CONSUME' | 'REFUND' | 'ADJUST';
+  amount: number;
+  balanceAfter: number;
+  note: string;
+  operator: string;
   createdAt: string;
 }
 

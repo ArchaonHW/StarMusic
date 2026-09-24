@@ -4,6 +4,26 @@ server:
 spring:
   application:
     name: star-video-service
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
+  datasource:
+    url: jdbc:h2:file:./data/videodb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ${STARMUSIC_DB_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  h2:
+    console:
+      enabled: false
+
+starmusic:
+  upload-dir: uploads
+  media-base: http://localhost:8080
 
 eureka:
   client:

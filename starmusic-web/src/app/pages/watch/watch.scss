@@ -1,0 +1,89 @@
+.page {
+  padding-bottom: 40px;
+}
+
+.player-wrap {
+  margin-top: 20px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: #000;
+}
+
+.player {
+  display: block;
+  width: 100%;
+  max-height: 70vh;
+}
+
+.no-source {
+  aspect-ratio: 16 / 9;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #3b2a6d, #e83e8c);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 4px;
+
+  p {
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 0;
+    color: rgba(255, 255, 255, 0.75);
+  }
+}
+
+.info {
+  padding: 20px 4px;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  h1 {
+    margin: 0;
+    font-size: 24px;
+  }
+}
+
+.hot-badge {
+  background: var(--primary);
+  color: #fff;
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 10px;
+}
+
+.meta-line {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+
+  .views {
+    color: var(--text-dim);
+    font-size: 13px;
+    margin-left: 8px;
+  }
+}
+
+.desc {
+  color: var(--text-dim);
+  line-height: 1.8;
+  margin-bottom: 20px;
+}
+
+.empty {
+  text-align: center;
+  color: var(--text-dim);
+  padding: 60px 0;
+
+  .btn {
+    margin-top: 16px;
+  }
+}

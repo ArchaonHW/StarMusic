@@ -39,6 +39,26 @@ h1 {
   margin-bottom: 22px;
 }
 
+.hero-photo {
+  display: block;
+  width: 100%;
+  border-radius: var(--radius);
+  margin-bottom: 24px;
+}
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+
+  img {
+    display: block;
+    width: 100%;
+    border-radius: var(--radius);
+  }
+}
+
 .hero-img {
   height: 300px;
   border-radius: var(--radius);
@@ -65,6 +85,7 @@ h1 {
   font-size: 15px;
   line-height: 1.9;
   color: var(--text-dim);
+  white-space: pre-line;
 }
 
 .back {

@@ -19,7 +19,23 @@ export class AuthService {
     );
   }
 
+  refresh(): void {
+    if (!localStorage.getItem('star-token')) {
+      return;
+    }
+    this.api.me().subscribe({
+      next: (m) => {
+        localStorage.setItem('star-member', JSON.stringify(m));
+        this.member.set(m);
+      },
+      error: () => this.logout()
+    });
+  }
+
   logout(): void {
+    if (localStorage.getItem('star-token')) {
+      this.api.logout().subscribe({ error: () => {} });
+    }
     localStorage.removeItem('star-token');
     localStorage.removeItem('star-member');
     this.member.set(null);

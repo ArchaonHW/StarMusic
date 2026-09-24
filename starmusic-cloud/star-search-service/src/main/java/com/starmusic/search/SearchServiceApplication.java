@@ -20,8 +20,8 @@ public class SearchServiceApplication {
     @LoadBalanced
     RestTemplate restTemplate(RestTemplateBuilder builder) {
         return builder
-                .setConnectTimeout(Duration.ofSeconds(2))
-                .setReadTimeout(Duration.ofSeconds(3))
+                .connectTimeout(Duration.ofSeconds(2))
+                .readTimeout(Duration.ofSeconds(3))
                 .build();
     }
 }

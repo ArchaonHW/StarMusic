@@ -5,13 +5,96 @@
     <div class="profile">
       <div class="avatar">★</div>
       <div class="profile-info">
-        <h3>{{ m.nickname }} <span class="level">{{ m.level }}</span></h3>
+        <h3>
+          {{ m.nickname }}
+          <span class="level" [class.admin]="m.role === 'ADMIN'">
+            {{ m.role === 'ADMIN' ? '管理員' : m.level }}
+          </span>
+        </h3>
         <p>帳號：{{ m.username }} · 信箱：{{ m.email || '未設定' }}</p>
+        <p class="balance">帳戶餘額：NT$ {{ m.balance | number: '1.0-0' }}</p>
         <button class="btn ghost" (click)="logout()">登出</button>
       </div>
     </div>
     @if (message()) {
       <p class="msg ok">{{ message() }}</p>
+    }
+
+    <h3 class="sub-title">帳務明細</h3>
+    @if (transactions().length > 0) {
+      <table class="tx-table">
+        <thead>
+          <tr><th>時間</th><th>類型</th><th>金額</th><th>餘額</th><th>說明</th></tr>
+        </thead>
+        <tbody>
+          @for (t of transactions(); track t.id) {
+            <tr>
+              <td>{{ t.createdAt | date: 'MM/dd HH:mm' }}</td>
+              <td><span class="tx-type">{{ typeLabel(t.type) }}</span></td>
+              <td [class.neg]="t.amount < 0" class="amt">
+                {{ t.amount > 0 ? '+' : '' }}{{ t.amount | number: '1.0-0' }}
+              </td>
+              <td>{{ t.balanceAfter | number: '1.0-0' }}</td>
+              <td>{{ t.note }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    } @else {
+      <p class="empty">尚無帳務紀錄</p>
+    }
+
+    @if (m.role === 'ADMIN') {
+      <h3 class="sub-title">待審核影片</h3>
+      @if (pendingUploads().length > 0) {
+        <div class="review-list">
+          @for (u of pendingUploads(); track u.id) {
+            <div class="review-item">
+              <div class="review-head">
+                <strong>{{ u.title }}</strong>
+                <span class="dim">{{ u.uploader }} · {{ u.createdAt | date: 'MM/dd HH:mm' }}</span>
+              </div>
+              <p class="dim">{{ u.description || '（無簡介）' }} · {{ u.originalFilename }}</p>
+              <div class="review-actions">
+                <input [(ngModel)]="reviewNote[u.id]" placeholder="審核備註（選填）" />
+                <button class="btn" (click)="review(u.id, true)">通過上架</button>
+                <button class="btn ghost" (click)="review(u.id, false)">退回</button>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="empty">目前沒有待審核影片</p>
+      }
+
+      <h3 class="sub-title">會員帳務管理</h3>
+      <table class="tx-table">
+        <thead>
+          <tr>
+            <th>會員</th><th>等級</th><th>餘額</th><th>調整</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (mem of allMembers(); track mem.id) {
+            <tr>
+              <td>{{ mem.nickname }}<br /><span class="dim">{{ mem.username }}</span></td>
+              <td>{{ mem.role === 'ADMIN' ? '管理員' : mem.level }}</td>
+              <td>NT$ {{ mem.balance | number: '1.0-0' }}</td>
+              <td class="adjust-cell">
+                <input
+                  type="number"
+                  [(ngModel)]="adjustAmount[mem.id]"
+                  placeholder="金額"
+                  min="1"
+                />
+                <input [(ngModel)]="adjustNote[mem.id]" placeholder="備註" />
+                <button class="btn" (click)="adjust(mem.id, 'TOPUP')">儲值</button>
+                <button class="btn ghost" (click)="adjust(mem.id, 'CONSUME')">扣款</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
     }
   } @else {
     <div class="form-card">
@@ -22,14 +105,14 @@
 
       <form (ngSubmit)="submit()">
         <label>帳號</label>
-        <input [(ngModel)]="username" name="username" required placeholder="試用帳號 starfan" />
+        <input [(ngModel)]="username" name="username" required placeholder="試用帳號 starfan / 管理員 admin" />
         <label>密碼</label>
         <input
           [(ngModel)]="password"
           name="password"
           type="password"
           required
-          placeholder="試用密碼 123456"
+          placeholder="starfan 密碼 123456 / admin 密碼 admin123"
         />
         @if (mode === 'register') {
           <label>暱稱</label>

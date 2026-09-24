@@ -29,7 +29,7 @@
   <h2 class="section-title">熱播影視</h2>
   <div class="grid">
     @for (v of hotVideos(); track v.id) {
-      <a class="card" routerLink="/videos">
+      <a class="card" [routerLink]="['/videos', v.id]">
         <div class="thumb">
           @if (v.hot) {
             <span class="badge">HOT</span>
