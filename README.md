@@ -2,8 +2,9 @@
 
 廣播、新聞、TV、雜誌、購物、會員 — 娛樂入口網站雛形。
 
-- 後端：Spring Boot 3.5 + Spring Cloud 2025（Eureka + Gateway + 八個微服務）
-- 資料庫：H2（檔案型持久化）— member-service 會員/帳務、video-service 影片上傳、post-service 會員投稿
+- 後端：Spring Boot 3.5 + Spring Cloud 2025（Eureka + Gateway + 九個微服務，search-service 以 OpenFeign 聚合）
+- 資料庫：H2（檔案型持久化，預設）／MySQL（`--spring.profiles.active=mysql` 切換，見下文）
+- 認證：JWT（HS256，`STARMUSIC_JWT_SECRET`）＋ 舊版 `star-*` token 相容
 - 前端：Angular 20（Standalone Components + Signals + SCSS）
 
 ## 專案結構
@@ -63,14 +64,16 @@ npm start          # http://localhost:4200
 | `/`         | 首頁：精選輪播、快訊跑馬燈、各頻道精選 |
 | `/videos`   | 影視（芒果TV式）：精選輪播 + 頻道樓層 + VIP專區 + 分類排行 |
 | `/videos/:id` | 影片播放頁（串流播放 + 相關推薦）   |
-| `/radio`    | 電台：頻道列表、節目表、播放按鈕 stub |
+| `/radio`    | 電台：頻道列表、節目表、播放列（合成音訊串流、音量、現正播出標示） |
 | `/news`     | 新聞：分類篩選、快訊標籤              |
 | `/news/:id` | 新聞詳情                              |
 | `/magazines`| 雜誌：封面牆 + 單期預覽彈窗           |
 | `/shop`     | 購物：商品列表、加入購物車            |
 | `/cart`     | 購物車：刪除品項、結帳產生訂單        |
-| `/member`   | 會員：註冊 / 登入 / 個人資料 / 管理員審核 |
-| `/posts`    | 會員投稿：影片/音訊/圖片/文章牆 + 投稿表單 |
+| `/member`   | 會員：註冊 / 登入 / 個人資料 / 帳務明細 / 我的收藏 / 觀看紀錄 |
+| `/posts`    | 會員投稿：影片/音訊/圖片/文章牆 + 投稿表單 + 我的投稿管理（下架/重送/刪除） |
+| `/posts/:id`| 投稿詳情：按讚、留言、管理操作      |
+| `/admin`    | 管理後台（僅管理員）：待審佇列、上下架、內容管理（新聞/雜誌/商品）、會員帳務 |
 | `/search`   | 搜尋：跨服務關鍵字搜尋結果（?q=）     |
 
 ## 測試帳號
@@ -100,18 +103,35 @@ npm start          # http://localhost:4200
 
 帳務：會員中心顯示餘額與交易明細；管理員可對任一會員儲值/扣款（寫入 `account_transactions` 並更新餘額）。
 
-- H2 資料檔：`star-member-service/data/`（members、account_transactions、auth_tokens）、`star-video-service/data/`（video_uploads）、`star-post-service/data/`（posts）
-- 上傳檔案存放：`star-video-service/uploads/`、`star-post-service/uploads/`，分別經 `/api/videos/files/{檔名}`、`/api/posts/files/{檔名}` 存取
+- H2 資料檔：`star-member-service/data/`（members、account_transactions、auth_tokens）、`star-video-service/data/`（video_uploads、收藏/觀看紀錄/評論）、`star-post-service/data/`（posts、post_likes、post_comments）、`star-magazine-service`、`star-news-service`、`star-shop-service`（JPA 持久化）
+- 上傳檔案存放：`star-video-service/uploads/`、`star-post-service/uploads/`，分別經 `/api/videos/files/{檔名}`、`/api/posts/files/{檔名}` 存取；未上架檔案僅上傳者本人與管理員可讀取
+
+### 互動功能
+
+- 影片：播放頁收藏（❤）、留言（本人/管理員可刪）、觀看紀錄自動寫入；會員中心顯示「我的收藏」「觀看紀錄」
+- 投稿：詳情頁按讚、留言；上架後作者可自行下架/重送/刪除
+- 電台：每個頻道提供 `/api/radio/streams/{id}` 合成 WAV 串流，前端播放列可循環收聽
+
+## 資料庫
+
+- 預設為 H2 檔案型資料庫，免安裝即可啟動
+- member / video / post 三服務提供 `mysql` profile：
+
+```bash
+mvn -pl star-member-service spring-boot:run -Dspring-boot.run.profiles=mysql
+# 以環境變數設定連線：MYSQL_HOST、MYSQL_PORT、MYSQL_USER、MYSQL_PASSWORD
+```
 
 ## 認證與權限
 
-- 登入後取得 `Bearer` token（`star-*`，7 天效期，存於 `auth_tokens` 表）；前端所有需身分的請求只帶 `Authorization` 標頭
-- Gateway 的 `AuthRelayFilter` 會剔除客戶端偽造的 `X-User-*` 標頭，並以 token 向 member-service `/api/members/me` 換取身分，注入 `X-User-Id` / `X-User-Name` / `X-User-Role` 給下游服務
+- 登入後 member-service 簽發 JWT（HS256，7 天效期，簽章密鑰 `STARMUSIC_JWT_SECRET`）；前端所有需身分的請求只帶 `Authorization: Bearer` 標頭
+- Gateway 的 `AuthRelayFilter` 會剔除客戶端偽造的 `X-User-*` 標頭：JWT 在閘道本地驗簽後直接注入 `X-User-Id` / `X-User-Name` / `X-User-Role`；舊版 `star-*` token 則 fallback 向 member-service `/api/members/me` 換取身分（`X-User-Name` 為 URL-encoded UTF-8，支援中文帳號，下游使用時需 `URLDecoder.decode`）
 - 密碼以 BCrypt 雜湊儲存；登入失敗 5 次/5 分鐘會被限流
 - 種子帳號密碼由環境變數決定：`STARMUSIC_ADMIN_PASSWORD`、`STARMUSIC_DEMO_PASSWORD`（未設定時自動產生隨機密碼並印在啟動日誌）
 - 資料庫密碼：`STARMUSIC_DB_PASSWORD`（預設空）
 
 ## 備註
 
-- 目前為雛形：影視/電台/新聞/雜誌/商品為記憶體種子資料；會員、帳務、影片上傳、會員投稿已接 H2 資料庫持久化。
-- 後續可加入：Spring Cloud Config、Resilience4j 熔斷、Spring Security + JWT、MySQL/Redis、OpenFeign 服務間呼叫。
+- 目前為雛形：影視目錄、電台節目表為記憶體種子資料；會員、帳務、影片上傳、會員投稿、新聞、雜誌、商品已接 H2 資料庫持久化。
+- search-service 透過 OpenFeign 呼叫各微服務聚合搜尋結果；單一服務離線時該類結果自動降級為空。
+- 後續可加入：Spring Cloud Config、Resilience4j 熔斷、Redis 快取。

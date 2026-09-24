@@ -4,6 +4,18 @@ server:
 spring:
   application:
     name: star-magazine-service
+  datasource:
+    url: jdbc:h2:file:./data/magazinedb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ${STARMUSIC_DB_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  h2:
+    console:
+      enabled: false
 
 eureka:
   client:

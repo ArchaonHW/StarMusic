@@ -4,6 +4,13 @@ server:
 spring:
   application:
     name: star-search-service
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connect-timeout: 2000
+            read-timeout: 3000
 
 eureka:
   client:

@@ -12,6 +12,9 @@
       <a routerLink="/magazines" routerLinkActive="active">雜誌</a>
       <a routerLink="/shop" routerLinkActive="active">購物</a>
       <a routerLink="/posts" routerLinkActive="active">投稿</a>
+      @if (auth.member()?.role === 'ADMIN') {
+        <a routerLink="/admin" routerLinkActive="active">後台</a>
+      }
     </nav>
     <form class="search-box" (ngSubmit)="search()">
       <input type="search" name="keyword" [(ngModel)]="keyword"

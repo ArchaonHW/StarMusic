@@ -2,6 +2,7 @@ package com.starmusic.video;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,6 +15,8 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -60,7 +63,8 @@ public class UploadController {
             @RequestParam("title") String title,
             @RequestParam(value = "category", required = false) String category,
             @RequestParam(value = "description", required = false) String description,
-            @RequestHeader(value = "X-User-Name", required = false) String uploader) {
+            @RequestHeader(value = "X-User-Name", required = false) String uploaderName) {
+        String uploader = dec(uploaderName);
         if (uploader == null || uploader.isBlank()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "請先登入會員");
         }
@@ -103,7 +107,8 @@ public class UploadController {
     }
 
     @GetMapping("/mine")
-    public List<UploadDto> mine(@RequestHeader(value = "X-User-Name", required = false) String uploader) {
+    public List<UploadDto> mine(@RequestHeader(value = "X-User-Name", required = false) String uploaderName) {
+        String uploader = dec(uploaderName);
         if (uploader == null || uploader.isBlank()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "請先登入會員");
         }
@@ -136,6 +141,65 @@ public class UploadController {
         return review(id, VideoUpload.REJECTED, req, role);
     }
 
+    @PostMapping("/{id}/takedown")
+    public UploadDto takedown(@PathVariable long id,
+                              @RequestHeader(value = "X-User-Name", required = false) String userName,
+                              @RequestHeader(value = "X-User-Role", required = false) String role) {
+        VideoUpload u = uploads.findById(id).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "上傳紀錄不存在"));
+        requireOwnerOrAdmin(u, userName, role);
+        if (!VideoUpload.APPROVED.equals(u.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "僅已上架的影片可下架");
+        }
+        u.setStatus(VideoUpload.TAKEN_DOWN);
+        u.setReviewedAt(Instant.now());
+        return UploadDto.of(uploads.save(u));
+    }
+
+    @PostMapping("/{id}/resubmit")
+    public UploadDto resubmit(@PathVariable long id,
+                              @RequestHeader(value = "X-User-Name", required = false) String userName) {
+        if (userName == null || userName.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "請先登入會員");
+        }
+        VideoUpload u = uploads.findById(id).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "上傳紀錄不存在"));
+        if (!userName.equals(u.getUploader())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "僅上傳本人可重新送審");
+        }
+        if (!VideoUpload.TAKEN_DOWN.equals(u.getStatus())
+                && !VideoUpload.REJECTED.equals(u.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "此影片目前無法重新送審");
+        }
+        u.setStatus(VideoUpload.PENDING);
+        u.setReviewNote(null);
+        u.setReviewedAt(null);
+        return UploadDto.of(uploads.save(u));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(
+            @PathVariable long id,
+            @RequestHeader(value = "X-User-Name", required = false) String userName,
+            @RequestHeader(value = "X-User-Role", required = false) String role) {
+        VideoUpload u = uploads.findById(id).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "上傳紀錄不存在"));
+        requireOwnerOrAdmin(u, userName, role);
+        uploads.delete(u);
+        try {
+            Files.deleteIfExists(uploadDir.resolve(u.getFilename()).normalize());
+        } catch (IOException ignored) {
+        }
+        return ResponseEntity.noContent().build();
+    }
+
+    private void requireOwnerOrAdmin(VideoUpload u, String userName, String role) {
+        boolean owner = userName != null && userName.equals(u.getUploader());
+        if (!owner && !"ADMIN".equals(role)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "沒有權限操作此影片");
+        }
+    }
+
     private UploadDto review(long id, String status, ReviewRequest req, String role) {
         requireAdmin(role);
         VideoUpload u = uploads.findById(id).orElseThrow(
@@ -150,6 +214,10 @@ public class UploadController {
         if (!"ADMIN".equals(role)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "需要管理員權限");
         }
+    }
+
+    private static String dec(String v) {
+        return v == null ? null : URLDecoder.decode(v, StandardCharsets.UTF_8);
     }
 
     private String ext(String name) {

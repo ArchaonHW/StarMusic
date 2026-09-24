@@ -1,5 +1,7 @@
 package com.starmusic.radio;
 
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -8,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
 @RequestMapping("/api/radio")
@@ -23,16 +27,18 @@ public class RadioController {
 
     private static final List<Channel> CHANNELS = List.of(
             new Channel(1, "星光流行網", "FM 92.7", "全亞洲最亮的流行音樂台", "流行音樂",
-                    "/streams/star-pop", true),
+                    "/api/radio/streams/1", true),
             new Channel(2, "亞洲音樂台", "FM 95.5", "華語金曲與日韓潮流直通車", "華語/日韓",
-                    "/streams/asia-music", true),
+                    "/api/radio/streams/2", true),
             new Channel(3, "都會星光", "FM 99.1", "城市夜生活，陪你到最後", "都會/爵士",
-                    "/streams/metro-star", true),
+                    "/api/radio/streams/3", true),
             new Channel(4, "古典星光", "FM 101.7", "古典與跨界，靜心聆聽", "古典/輕音樂",
-                    "/streams/classic-star", false),
+                    "/api/radio/streams/4", false),
             new Channel(5, "星光新聞網", "AM 1296", "24 小時全球娛樂新聞快報", "新聞/談話",
-                    "/streams/star-news", true)
+                    "/api/radio/streams/5", true)
     );
+
+    private final Map<Long, byte[]> streamCache = new ConcurrentHashMap<>();
 
     private static final List<Program> PROGRAMS = List.of(
             new Program(1, 1, "晨光音樂早餐", "小星", "06:00-09:00", "音樂",
@@ -72,5 +78,18 @@ public class RadioController {
         return PROGRAMS.stream()
                 .filter(p -> channelId == null || p.channelId() == channelId)
                 .toList();
+    }
+
+    @GetMapping("/streams/{id}")
+    public ResponseEntity<ByteArrayResource> stream(@PathVariable long id) {
+        boolean exists = CHANNELS.stream().anyMatch(c -> c.id() == id);
+        if (!exists) {
+            return ResponseEntity.notFound().build();
+        }
+        byte[] wav = streamCache.computeIfAbsent(id, WavSynth::render);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("audio/wav"))
+                .contentLength(wav.length)
+                .body(new ByteArrayResource(wav));
     }
 }

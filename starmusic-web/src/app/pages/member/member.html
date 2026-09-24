@@ -44,84 +44,38 @@
       <p class="empty">尚無帳務紀錄</p>
     }
 
-    @if (m.role === 'ADMIN') {
-      <h3 class="sub-title">待審核影片</h3>
-      @if (pendingUploads().length > 0) {
-        <div class="review-list">
-          @for (u of pendingUploads(); track u.id) {
-            <div class="review-item">
-              <div class="review-head">
-                <strong>{{ u.title }}</strong>
-                <span class="dim">{{ u.uploader }} · {{ u.createdAt | date: 'MM/dd HH:mm' }}</span>
-              </div>
-              <p class="dim">{{ u.description || '（無簡介）' }} · {{ u.originalFilename }}</p>
-              <div class="review-actions">
-                <input [(ngModel)]="reviewNote[u.id]" placeholder="審核備註（選填）" />
-                <button class="btn" (click)="review(u.id, true)">通過上架</button>
-                <button class="btn ghost" (click)="review(u.id, false)">退回</button>
-              </div>
-            </div>
-          }
-        </div>
-      } @else {
-        <p class="empty">目前沒有待審核影片</p>
-      }
-
-      <h3 class="sub-title">待審核投稿</h3>
-      @if (pendingPosts().length > 0) {
-        <div class="review-list">
-          @for (p of pendingPosts(); track p.id) {
-            <div class="review-item">
-              <div class="review-head">
-                <strong>
-                  <span class="tag">{{ postTypeLabel(p.type) }}</span> {{ p.title }}
-                </strong>
-                <span class="dim">{{ p.author }} · {{ p.createdAt | date: 'MM/dd HH:mm' }}</span>
-              </div>
-              <p class="dim">
-                {{ p.body || p.originalFilename || '（無內容預覽）' }}
-              </p>
-              <div class="review-actions">
-                <input [(ngModel)]="reviewNote[-p.id]" placeholder="審核備註（選填）" />
-                <button class="btn" (click)="reviewPost(p.id, true)">通過上架</button>
-                <button class="btn ghost" (click)="reviewPost(p.id, false)">退回</button>
-              </div>
-            </div>
-          }
-        </div>
-      } @else {
-        <p class="empty">目前沒有待審核投稿</p>
-      }
-
-      <h3 class="sub-title">會員帳務管理</h3>
-      <table class="tx-table">
-        <thead>
-          <tr>
-            <th>會員</th><th>等級</th><th>餘額</th><th>調整</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (mem of allMembers(); track mem.id) {
-            <tr>
-              <td>{{ mem.nickname }}<br /><span class="dim">{{ mem.username }}</span></td>
-              <td>{{ mem.role === 'ADMIN' ? '管理員' : mem.level }}</td>
-              <td>NT$ {{ mem.balance | number: '1.0-0' }}</td>
-              <td class="adjust-cell">
-                <input
-                  type="number"
-                  [(ngModel)]="adjustAmount[mem.id]"
-                  placeholder="金額"
-                  min="1"
-                />
-                <input [(ngModel)]="adjustNote[mem.id]" placeholder="備註" />
-                <button class="btn" (click)="adjust(mem.id, 'TOPUP')">儲值</button>
-                <button class="btn ghost" (click)="adjust(mem.id, 'CONSUME')">扣款</button>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
+    <h3 class="sub-title">我的收藏</h3>
+    @if (myFavorites().length > 0) {
+      <div class="mini-grid">
+        @for (v of myFavorites(); track v.id) {
+          <a class="mini-card" [routerLink]="['/videos', v.id]">
+            <strong>{{ v.title }}</strong>
+            <span class="dim">{{ v.category }}</span>
+          </a>
+        }
+      </div>
+    } @else {
+      <p class="empty">還沒有收藏影片</p>
     }
+
+    <h3 class="sub-title">觀看紀錄</h3>
+    @if (myHistory().length > 0) {
+      <div class="mini-grid">
+        @for (h of myHistory(); track h.video.id) {
+          <a class="mini-card" [routerLink]="['/videos', h.video.id]">
+            <strong>{{ h.video.title }}</strong>
+            <span class="dim">{{ h.watchedAt | date: 'MM/dd HH:mm' }}</span>
+          </a>
+        }
+      </div>
+    } @else {
+      <p class="empty">還沒有觀看紀錄</p>
+    }
+
+    @if (m.role === 'ADMIN') {
+      <p><a class="btn ghost" routerLink="/admin">前往管理後台 →</a></p>
+    }
+
   } @else {
     <div class="form-card">
       <div class="tabs">

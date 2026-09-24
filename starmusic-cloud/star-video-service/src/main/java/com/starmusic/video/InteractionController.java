@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -150,10 +152,12 @@ public class InteractionController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "評論必填且不超過 " + MAX_COMMENT + " 字");
         }
+        String author = userName == null ? null
+                : URLDecoder.decode(userName, StandardCharsets.UTF_8);
         VideoComment c = new VideoComment();
         c.setVideoId(id);
         c.setMemberId(userId);
-        c.setAuthor(userName == null || userName.isBlank() ? "會員" : userName);
+        c.setAuthor(author == null || author.isBlank() ? "會員" : author);
         c.setBody(body);
         return CommentDto.of(comments.save(c));
     }

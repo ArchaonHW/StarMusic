@@ -1,13 +1,21 @@
 package com.starmusic.magazine;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/api/magazines")
@@ -45,16 +53,33 @@ public class MagazineController {
                     List.of("視效總監訪談", "科幻片百年回顧", "金獎片單預測"), true)
     );
 
+    public record MagazineRequest(String title, String issueNo, String cover,
+                                  String publishDate, Double price, String category,
+                                  String coverStory, List<String> highlights,
+                                  Boolean latest) {
+    }
+
+    private static final long MANAGED_ID_BASE = 10000;
+    private static final int MAX_TITLE = 200;
+    private static final int MAX_SHORT = 100;
+    private static final int MAX_TEXT = 2000;
+
+    private final MagazineRepository magazines;
+
+    public MagazineController(MagazineRepository magazines) {
+        this.magazines = magazines;
+    }
+
     @GetMapping
     public List<Magazine> list(@RequestParam(required = false) String category) {
-        return MAGAZINES.stream()
+        return all()
                 .filter(m -> category == null || m.category().equals(category))
                 .toList();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Magazine> get(@PathVariable long id) {
-        return MAGAZINES.stream()
+        return all()
                 .filter(m -> m.id() == id)
                 .findFirst()
                 .map(ResponseEntity::ok)
@@ -63,11 +88,89 @@ public class MagazineController {
 
     @GetMapping("/latest")
     public List<Magazine> latest() {
-        return MAGAZINES.stream().filter(Magazine::latest).toList();
+        return all().filter(Magazine::latest).toList();
     }
 
     @GetMapping("/categories")
     public List<String> categories() {
-        return MAGAZINES.stream().map(Magazine::category).distinct().toList();
+        return all().map(Magazine::category).distinct().toList();
+    }
+
+    @GetMapping("/manage")
+    public List<Magazine> managed(
+            @RequestHeader(value = "X-User-Role", required = false) String role) {
+        requireAdmin(role);
+        return magazines.findAll().stream()
+                .sorted(Comparator.comparing(MagazineEntity::getId).reversed())
+                .map(this::fromEntity)
+                .toList();
+    }
+
+    @PostMapping("/manage")
+    public Magazine create(@RequestBody(required = false) MagazineRequest req,
+                           @RequestHeader(value = "X-User-Role", required = false) String role) {
+        requireAdmin(role);
+        if (req == null || req.title() == null || req.title().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "標題必填");
+        }
+        if (req.title().length() > MAX_TITLE) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "標題過長");
+        }
+        checkLen(req.issueNo(), MAX_SHORT, "期號");
+        checkLen(req.publishDate(), MAX_SHORT, "出版日期");
+        checkLen(req.category(), MAX_SHORT, "分類");
+        checkLen(req.coverStory(), MAX_TEXT, "封面故事");
+
+        MagazineEntity e = new MagazineEntity();
+        e.setTitle(req.title().trim());
+        e.setIssueNo(req.issueNo());
+        e.setCover(req.cover());
+        e.setPublishDate(req.publishDate());
+        e.setPrice(req.price() == null ? 0 : req.price());
+        e.setCategory(req.category());
+        e.setCoverStory(req.coverStory());
+        e.setHighlights(req.highlights() == null ? null : String.join("\n", req.highlights()));
+        e.setLatest(Boolean.TRUE.equals(req.latest()));
+        return fromEntity(magazines.save(e));
+    }
+
+    @DeleteMapping("/manage/{id}")
+    public ResponseEntity<Void> deleteManaged(
+            @PathVariable long id,
+            @RequestHeader(value = "X-User-Role", required = false) String role) {
+        requireAdmin(role);
+        long dbId = id - MANAGED_ID_BASE;
+        if (!magazines.existsById(dbId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "內容不存在或為內建資料");
+        }
+        magazines.deleteById(dbId);
+        return ResponseEntity.noContent().build();
+    }
+
+    private Stream<Magazine> all() {
+        return Stream.concat(
+                MAGAZINES.stream(),
+                magazines.findAll().stream().map(this::fromEntity));
+    }
+
+    private Magazine fromEntity(MagazineEntity e) {
+        List<String> highlights = e.getHighlights() == null || e.getHighlights().isBlank()
+                ? List.of()
+                : List.of(e.getHighlights().split("\\R"));
+        return new Magazine(MANAGED_ID_BASE + e.getId(), e.getTitle(), e.getIssueNo(),
+                e.getCover(), e.getPublishDate(), e.getPrice(), e.getCategory(),
+                e.getCoverStory(), highlights, e.isLatest());
+    }
+
+    private void requireAdmin(String role) {
+        if (!"ADMIN".equals(role)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "需要管理員權限");
+        }
+    }
+
+    private void checkLen(String v, int max, String label) {
+        if (v != null && v.length() > max) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, label + "過長");
+        }
     }
 }

@@ -1,13 +1,21 @@
 package com.starmusic.video;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -104,13 +112,23 @@ public class VideoController {
                     List.of("直播", "跨年"), false, null, false, false, "直播中")
     );
 
+    private static final Map<String, MediaType> FILE_MEDIA_TYPE = Map.of(
+            ".mp4", MediaType.parseMediaType("video/mp4"),
+            ".m4v", MediaType.parseMediaType("video/mp4"),
+            ".mov", MediaType.parseMediaType("video/quicktime"),
+            ".webm", MediaType.parseMediaType("video/webm"),
+            ".mkv", MediaType.parseMediaType("video/x-matroska"));
+
     private final VideoUploadRepository uploads;
     private final String mediaBase;
+    private final Path uploadDir;
 
     public VideoController(VideoUploadRepository uploads,
-                           @Value("${starmusic.media-base:http://localhost:8080}") String mediaBase) {
+                           @Value("${starmusic.media-base:http://localhost:8080}") String mediaBase,
+                           @Value("${starmusic.upload-dir:uploads}") String uploadDir) {
         this.uploads = uploads;
         this.mediaBase = mediaBase;
+        this.uploadDir = Path.of(uploadDir);
     }
 
     @GetMapping
@@ -175,6 +193,34 @@ public class VideoController {
                 .toList();
     }
 
+    @GetMapping("/files/{filename}")
+    public ResponseEntity<Resource> file(
+            @PathVariable String filename,
+            @RequestHeader(value = "X-User-Name", required = false) String userName,
+            @RequestHeader(value = "X-User-Role", required = false) String role) {
+        if (!filename.matches("[0-9a-f-]{36}\\.[a-z0-9]+")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "無效的檔名");
+        }
+        VideoUpload u = uploads.findByFilename(filename).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "檔案不存在"));
+        String caller = userName == null ? null
+                : java.net.URLDecoder.decode(userName, java.nio.charset.StandardCharsets.UTF_8);
+        boolean allowed = VideoUpload.APPROVED.equals(u.getStatus())
+                || (caller != null && caller.equals(u.getUploader()))
+                || "ADMIN".equals(role);
+        if (!allowed) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "此影片尚未公開或已下架");
+        }
+        Path path = uploadDir.resolve(filename).normalize();
+        if (!path.startsWith(uploadDir) || !Files.isRegularFile(path)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "檔案不存在");
+        }
+        return ResponseEntity.ok()
+                .contentType(FILE_MEDIA_TYPE.getOrDefault(
+                        ext(filename), MediaType.APPLICATION_OCTET_STREAM))
+                .body(new FileSystemResource(path));
+    }
+
     private Stream<Video> all() {
         return Stream.concat(
                 VIDEOS.stream(),
@@ -187,6 +233,14 @@ public class VideoController {
 
     boolean exists(long videoId) {
         return all().anyMatch(v -> v.id() == videoId);
+    }
+
+    private String ext(String name) {
+        if (name == null) {
+            return "";
+        }
+        int dot = name.lastIndexOf('.');
+        return dot >= 0 ? name.substring(dot).toLowerCase(java.util.Locale.ROOT) : "";
     }
 
     private Video fromUpload(VideoUpload u) {

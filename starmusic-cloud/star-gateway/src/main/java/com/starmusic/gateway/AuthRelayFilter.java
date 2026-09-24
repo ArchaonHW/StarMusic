@@ -10,15 +10,20 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
 @Component
 public class AuthRelayFilter implements GlobalFilter, Ordered {
 
     private static final String[] IDENTITY_HEADERS = {"X-User-Id", "X-User-Name", "X-User-Role"};
 
     private final WebClient webClient;
+    private final JwtSupport jwt;
 
-    public AuthRelayFilter(WebClient.Builder webClientBuilder) {
+    public AuthRelayFilter(WebClient.Builder webClientBuilder, JwtSupport jwt) {
         this.webClient = webClientBuilder.build();
+        this.jwt = jwt;
     }
 
     public record MemberInfo(long id, String username, String role) {
@@ -40,20 +45,34 @@ public class AuthRelayFilter implements GlobalFilter, Ordered {
             return chain.filter(clean);
         }
 
+        String token = authorization.substring(7).trim();
+        try {
+            io.jsonwebtoken.Claims c = jwt.parse(token).getPayload();
+            return chain.filter(withIdentity(clean, stripped, c.getSubject(),
+                    c.get("username", String.class), c.get("role", String.class)));
+        } catch (Exception ignored) {
+            // 非 JWT（舊版不透明 token）才回 member-service 查詢
+        }
+
         return webClient.get()
                 .uri("http://star-member-service/api/members/me")
                 .header(HttpHeaders.AUTHORIZATION, authorization)
                 .retrieve()
                 .bodyToMono(MemberInfo.class)
-                .flatMap(m -> {
-                    ServerHttpRequest authed = stripped.mutate()
-                            .header("X-User-Id", String.valueOf(m.id()))
-                            .header("X-User-Name", m.username() == null ? "" : m.username())
-                            .header("X-User-Role", m.role() == null ? "" : m.role())
-                            .build();
-                    return chain.filter(clean.mutate().request(authed).build());
-                })
+                .flatMap(m -> chain.filter(withIdentity(clean, stripped,
+                        String.valueOf(m.id()), m.username(), m.role())))
                 .onErrorResume(e -> chain.filter(clean));
+    }
+
+    private ServerWebExchange withIdentity(ServerWebExchange exchange, ServerHttpRequest base,
+                                           String userId, String username, String role) {
+        ServerHttpRequest authed = base.mutate()
+                .header("X-User-Id", userId == null ? "" : userId)
+                .header("X-User-Name", username == null ? ""
+                        : URLEncoder.encode(username, StandardCharsets.UTF_8))
+                .header("X-User-Role", role == null ? "" : role)
+                .build();
+        return exchange.mutate().request(authed).build();
     }
 
     @Override

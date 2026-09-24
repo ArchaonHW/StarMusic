@@ -1,14 +1,21 @@
 package com.starmusic.news;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/api/news")
@@ -89,9 +96,27 @@ public class NewsController {
                     "2026-09-24T10:30:00", false)
     );
 
+    public record ArticleRequest(String title, String category, String summary,
+                                 String content, String source, String author,
+                                 String imageUrl, List<String> imageUrls,
+                                 Boolean breaking) {
+    }
+
+    private static final long MANAGED_ID_BASE = 10000;
+    private static final int MAX_TITLE = 200;
+    private static final int MAX_SHORT = 100;
+    private static final int MAX_SUMMARY = 500;
+    private static final int MAX_CONTENT = 20000;
+
+    private final NewsArticleRepository articles;
+
+    public NewsController(NewsArticleRepository articles) {
+        this.articles = articles;
+    }
+
     @GetMapping
     public List<Article> list(@RequestParam(required = false) String category) {
-        return ARTICLES.stream()
+        return all()
                 .filter(a -> category == null || a.category().equals(category))
                 .sorted(Comparator.comparing(Article::publishedAt).reversed())
                 .toList();
@@ -99,7 +124,7 @@ public class NewsController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Article> get(@PathVariable long id) {
-        return ARTICLES.stream()
+        return all()
                 .filter(a -> a.id() == id)
                 .findFirst()
                 .map(ResponseEntity::ok)
@@ -108,11 +133,90 @@ public class NewsController {
 
     @GetMapping("/breaking")
     public List<Article> breaking() {
-        return ARTICLES.stream().filter(Article::breaking).toList();
+        return all().filter(Article::breaking).toList();
     }
 
     @GetMapping("/categories")
     public List<String> categories() {
-        return ARTICLES.stream().map(Article::category).distinct().toList();
+        return all().map(Article::category).distinct().toList();
+    }
+
+    @GetMapping("/manage")
+    public List<Article> managed(
+            @RequestHeader(value = "X-User-Role", required = false) String role) {
+        requireAdmin(role);
+        return articles.findAll().stream()
+                .sorted(Comparator.comparing(NewsArticleEntity::getId).reversed())
+                .map(this::fromEntity)
+                .toList();
+    }
+
+    @PostMapping("/manage")
+    public Article create(@RequestBody(required = false) ArticleRequest req,
+                          @RequestHeader(value = "X-User-Role", required = false) String role) {
+        requireAdmin(role);
+        if (req == null || req.title() == null || req.title().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "標題必填");
+        }
+        if (req.title().length() > MAX_TITLE) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "標題過長");
+        }
+        checkLen(req.category(), MAX_SHORT, "分類");
+        checkLen(req.source(), MAX_SHORT, "來源");
+        checkLen(req.author(), MAX_SHORT, "作者");
+        checkLen(req.summary(), MAX_SUMMARY, "摘要");
+        checkLen(req.content(), MAX_CONTENT, "內文");
+
+        NewsArticleEntity e = new NewsArticleEntity();
+        e.setTitle(req.title().trim());
+        e.setCategory(req.category());
+        e.setSummary(req.summary());
+        e.setContent(req.content());
+        e.setSource(req.source());
+        e.setAuthor(req.author());
+        e.setImageUrl(req.imageUrl());
+        e.setImageUrls(req.imageUrls() == null ? null : String.join("\n", req.imageUrls()));
+        e.setBreaking(Boolean.TRUE.equals(req.breaking()));
+        return fromEntity(articles.save(e));
+    }
+
+    @DeleteMapping("/manage/{id}")
+    public ResponseEntity<Void> deleteManaged(
+            @PathVariable long id,
+            @RequestHeader(value = "X-User-Role", required = false) String role) {
+        requireAdmin(role);
+        long dbId = id - MANAGED_ID_BASE;
+        if (!articles.existsById(dbId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "內容不存在或為內建資料");
+        }
+        articles.deleteById(dbId);
+        return ResponseEntity.noContent().build();
+    }
+
+    private Stream<Article> all() {
+        return Stream.concat(
+                ARTICLES.stream(),
+                articles.findAll().stream().map(this::fromEntity));
+    }
+
+    private Article fromEntity(NewsArticleEntity e) {
+        List<String> urls = e.getImageUrls() == null || e.getImageUrls().isBlank()
+                ? List.of()
+                : List.of(e.getImageUrls().split("\\R"));
+        return new Article(MANAGED_ID_BASE + e.getId(), e.getTitle(), e.getCategory(),
+                e.getSummary(), e.getContent(), e.getSource(), e.getAuthor(),
+                e.getImageUrl(), urls, e.getPublishedAt(), e.isBreaking());
+    }
+
+    private void requireAdmin(String role) {
+        if (!"ADMIN".equals(role)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "需要管理員權限");
+        }
+    }
+
+    private void checkLen(String v, int max, String label) {
+        if (v != null && v.length() > max) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, label + "過長");
+        }
     }
 }

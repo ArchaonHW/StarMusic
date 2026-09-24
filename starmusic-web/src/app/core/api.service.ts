@@ -8,13 +8,17 @@ import {
   Channel,
   Magazine,
   Member,
+  Page,
   Post,
+  PostComment,
   Product,
   Program,
   SearchResult,
   Video,
+  VideoComment,
   VideoHome,
-  VideoUpload
+  VideoUpload,
+  WatchHistoryItem
 } from '../models';
 
 @Injectable({ providedIn: 'root' })
@@ -44,6 +48,58 @@ export class ApiService {
     return this.http.get<VideoHome>(`${this.base}/videos/home`);
   }
 
+  toggleFavorite(videoId: number): Observable<{ favorited: boolean }> {
+    return this.http.post<{ favorited: boolean }>(
+      `${this.base}/videos/${videoId}/favorite`,
+      {},
+      { headers: this.authHeaders() }
+    );
+  }
+
+  favorited(videoId: number): Observable<{ favorited: boolean }> {
+    return this.http.get<{ favorited: boolean }>(`${this.base}/videos/${videoId}/favorite`, {
+      headers: this.authHeaders()
+    });
+  }
+
+  myFavorites(): Observable<Video[]> {
+    return this.http.get<Video[]>(`${this.base}/videos/favorites/mine`, {
+      headers: this.authHeaders()
+    });
+  }
+
+  recordHistory(videoId: number) {
+    return this.http.post(
+      `${this.base}/videos/${videoId}/history`,
+      {},
+      { headers: this.authHeaders() }
+    );
+  }
+
+  myHistory(): Observable<WatchHistoryItem[]> {
+    return this.http.get<WatchHistoryItem[]>(`${this.base}/videos/history/mine`, {
+      headers: this.authHeaders()
+    });
+  }
+
+  comments(videoId: number): Observable<VideoComment[]> {
+    return this.http.get<VideoComment[]>(`${this.base}/videos/${videoId}/comments`);
+  }
+
+  addComment(videoId: number, body: string): Observable<VideoComment> {
+    return this.http.post<VideoComment>(
+      `${this.base}/videos/${videoId}/comments`,
+      { body },
+      { headers: this.authHeaders() }
+    );
+  }
+
+  deleteComment(commentId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/videos/comments/${commentId}`, {
+      headers: this.authHeaders()
+    });
+  }
+
   channels(): Observable<Channel[]> {
     return this.http.get<Channel[]>(`${this.base}/radio/channels`);
   }
@@ -70,6 +126,34 @@ export class ApiService {
     return this.http.get<string[]>(`${this.base}/news/categories`);
   }
 
+  managedNews(): Observable<Article[]> {
+    return this.http.get<Article[]>(`${this.base}/news/manage`, {
+      headers: this.authHeaders()
+    });
+  }
+
+  createNews(req: {
+    title: string;
+    category?: string;
+    summary?: string;
+    content?: string;
+    source?: string;
+    author?: string;
+    imageUrl?: string;
+    imageUrls?: string[];
+    breaking?: boolean;
+  }): Observable<Article> {
+    return this.http.post<Article>(`${this.base}/news/manage`, req, {
+      headers: this.authHeaders()
+    });
+  }
+
+  deleteNewsItem(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/news/manage/${id}`, {
+      headers: this.authHeaders()
+    });
+  }
+
   magazines(category?: string): Observable<Magazine[]> {
     return this.http.get<Magazine[]>(`${this.base}/magazines`, {
       params: this.p({ category })
@@ -84,12 +168,67 @@ export class ApiService {
     return this.http.get<string[]>(`${this.base}/magazines/categories`);
   }
 
+  managedMagazines(): Observable<Magazine[]> {
+    return this.http.get<Magazine[]>(`${this.base}/magazines/manage`, {
+      headers: this.authHeaders()
+    });
+  }
+
+  createMagazine(req: {
+    title: string;
+    issueNo?: string;
+    cover?: string;
+    publishDate?: string;
+    price?: number;
+    category?: string;
+    coverStory?: string;
+    highlights?: string[];
+    latest?: boolean;
+  }): Observable<Magazine> {
+    return this.http.post<Magazine>(`${this.base}/magazines/manage`, req, {
+      headers: this.authHeaders()
+    });
+  }
+
+  deleteMagazineItem(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/magazines/manage/${id}`, {
+      headers: this.authHeaders()
+    });
+  }
+
   products(category?: string): Observable<Product[]> {
     return this.http.get<Product[]>(`${this.base}/products`, { params: this.p({ category }) });
   }
 
   productCategories(): Observable<string[]> {
     return this.http.get<string[]>(`${this.base}/products/categories`);
+  }
+
+  managedProducts(): Observable<Product[]> {
+    return this.http.get<Product[]>(`${this.base}/products/manage`, {
+      headers: this.authHeaders()
+    });
+  }
+
+  createProduct(req: {
+    name: string;
+    category?: string;
+    price?: number;
+    originalPrice?: number;
+    image?: string;
+    rating?: number;
+    stock?: number;
+    description?: string;
+  }): Observable<Product> {
+    return this.http.post<Product>(`${this.base}/products/manage`, req, {
+      headers: this.authHeaders()
+    });
+  }
+
+  deleteProductItem(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/products/manage/${id}`, {
+      headers: this.authHeaders()
+    });
   }
 
   search(q: string): Observable<SearchResult> {
@@ -140,6 +279,28 @@ export class ApiService {
     );
   }
 
+  takedownUpload(id: number): Observable<VideoUpload> {
+    return this.http.post<VideoUpload>(
+      `${this.base}/videos/uploads/${id}/takedown`,
+      {},
+      { headers: this.authHeaders() }
+    );
+  }
+
+  resubmitUpload(id: number): Observable<VideoUpload> {
+    return this.http.post<VideoUpload>(
+      `${this.base}/videos/uploads/${id}/resubmit`,
+      {},
+      { headers: this.authHeaders() }
+    );
+  }
+
+  deleteUpload(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/videos/uploads/${id}`, {
+      headers: this.authHeaders()
+    });
+  }
+
   members(): Observable<Member[]> {
     return this.http.get<Member[]>(`${this.base}/members`, { headers: this.authHeaders() });
   }
@@ -161,8 +322,10 @@ export class ApiService {
     );
   }
 
-  posts(type?: string): Observable<Post[]> {
-    return this.http.get<Post[]>(`${this.base}/posts`, { params: this.p({ type }) });
+  posts(type?: string, page = 0, size = 12): Observable<Page<Post>> {
+    return this.http.get<Page<Post>>(`${this.base}/posts`, {
+      params: this.p({ type, page, size })
+    });
   }
 
   createPost(
@@ -184,12 +347,18 @@ export class ApiService {
     return this.http.post<Post>(`${this.base}/posts`, fd, { headers: this.authHeaders() });
   }
 
-  myPosts(): Observable<Post[]> {
-    return this.http.get<Post[]>(`${this.base}/posts/mine`, { headers: this.authHeaders() });
+  myPosts(page = 0, size = 12): Observable<Page<Post>> {
+    return this.http.get<Page<Post>>(`${this.base}/posts/mine`, {
+      headers: this.authHeaders(),
+      params: this.p({ page, size })
+    });
   }
 
-  pendingPosts(): Observable<Post[]> {
-    return this.http.get<Post[]>(`${this.base}/posts/pending`, { headers: this.authHeaders() });
+  pendingPosts(page = 0, size = 20): Observable<Page<Post>> {
+    return this.http.get<Page<Post>>(`${this.base}/posts/pending`, {
+      headers: this.authHeaders(),
+      params: this.p({ page, size })
+    });
   }
 
   reviewPost(id: number, approve: boolean, note?: string): Observable<Post> {
@@ -198,6 +367,76 @@ export class ApiService {
       { note },
       { headers: this.authHeaders() }
     );
+  }
+
+  post(id: number): Observable<Post> {
+    return this.http.get<Post>(`${this.base}/posts/${id}`, {
+      headers: this.authHeaders()
+    });
+  }
+
+  postLikes(id: number): Observable<{ likes: number; liked: boolean }> {
+    return this.http.get<{ likes: number; liked: boolean }>(
+      `${this.base}/posts/${id}/likes`,
+      { headers: this.authHeaders() }
+    );
+  }
+
+  likePost(id: number): Observable<{ liked: boolean; likes: number }> {
+    return this.http.post<{ liked: boolean; likes: number }>(
+      `${this.base}/posts/${id}/like`,
+      {},
+      { headers: this.authHeaders() }
+    );
+  }
+
+  postComments(id: number): Observable<PostComment[]> {
+    return this.http.get<PostComment[]>(`${this.base}/posts/${id}/comments`, {
+      headers: this.authHeaders()
+    });
+  }
+
+  addPostComment(id: number, body: string): Observable<PostComment> {
+    return this.http.post<PostComment>(
+      `${this.base}/posts/${id}/comments`,
+      { body },
+      { headers: this.authHeaders() }
+    );
+  }
+
+  deletePostComment(commentId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/posts/comments/${commentId}`, {
+      headers: this.authHeaders()
+    });
+  }
+
+  managePosts(status?: string): Observable<Post[]> {
+    return this.http.get<Post[]>(`${this.base}/posts/manage`, {
+      params: this.p({ status }),
+      headers: this.authHeaders()
+    });
+  }
+
+  takedownPost(id: number): Observable<Post> {
+    return this.http.post<Post>(
+      `${this.base}/posts/${id}/takedown`,
+      {},
+      { headers: this.authHeaders() }
+    );
+  }
+
+  resubmitPost(id: number): Observable<Post> {
+    return this.http.post<Post>(
+      `${this.base}/posts/${id}/resubmit`,
+      {},
+      { headers: this.authHeaders() }
+    );
+  }
+
+  deletePost(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/posts/${id}`, {
+      headers: this.authHeaders()
+    });
   }
 
   register(req: {

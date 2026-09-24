@@ -39,6 +39,15 @@
               @if (p.status === 'REJECTED' && p.reviewNote) {
                 <span class="note">退回原因：{{ p.reviewNote }}</span>
               }
+              <span class="row-actions">
+                @if (p.status === 'APPROVED') {
+                  <button class="btn-mini" (click)="takedown(p.id)">下架</button>
+                }
+                @if (p.status === 'TAKEN_DOWN' || p.status === 'REJECTED') {
+                  <button class="btn-mini" (click)="resubmit(p.id)">重新送審</button>
+                }
+                <button class="btn-mini danger" (click)="remove(p.id)">刪除</button>
+              </span>
             </li>
           }
         </ul>
@@ -81,7 +90,7 @@
             }
           }
         }
-        <div class="card-body">
+        <a class="card-body" [routerLink]="['/posts', p.id]">
           <div class="post-meta">
             <span class="type-badge">{{ typeLabel(p.type) }}</span>
             @if (p.category) {
@@ -95,11 +104,18 @@
           <div class="meta">
             <span>{{ p.author }}</span>
             <span>{{ p.createdAt | date: 'yyyy/MM/dd' }}</span>
+            <span class="likes">❤ {{ p.likeCount }}</span>
           </div>
-        </div>
+        </a>
       </div>
     } @empty {
       <p class="empty">目前沒有這類型的投稿</p>
     }
   </div>
+
+  @if (hasMore()) {
+    <div class="load-more">
+      <button class="btn" (click)="loadMore()">載入更多</button>
+    </div>
+  }
 </div>

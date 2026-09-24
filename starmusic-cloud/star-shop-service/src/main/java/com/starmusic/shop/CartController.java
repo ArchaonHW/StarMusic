@@ -35,6 +35,11 @@ public class CartController {
     private final List<CartItem> cart = new CopyOnWriteArrayList<>();
     private final Map<Long, Order> orders = new ConcurrentHashMap<>();
     private final AtomicLong orderSeq = new AtomicLong(1000);
+    private final ProductController productCatalog;
+
+    public CartController(ProductController productCatalog) {
+        this.productCatalog = productCatalog;
+    }
 
     @GetMapping("/api/cart")
     public Cart getCart() {
@@ -43,10 +48,7 @@ public class CartController {
 
     @PostMapping("/api/cart/items")
     public ResponseEntity<Cart> addItem(@RequestBody AddItemRequest req) {
-        Product product = ProductController.PRODUCTS.stream()
-                .filter(p -> p.id() == req.productId())
-                .findFirst()
-                .orElse(null);
+        Product product = productCatalog.findProduct(req.productId()).orElse(null);
         if (product == null) {
             return ResponseEntity.notFound().build();
         }

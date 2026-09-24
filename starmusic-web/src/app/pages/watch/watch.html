@@ -39,8 +39,49 @@
         </span>
       </div>
       <p class="desc">{{ v.description }}</p>
-      <a class="btn ghost" routerLink="/videos">← 返回影視頻道</a>
+      <div class="actions">
+        @if (auth.member()) {
+          <button class="btn ghost" [class.faved]="favorited()" (click)="toggleFavorite()">
+            {{ favorited() ? '★ 已收藏' : '☆ 收藏' }}
+          </button>
+        } @else {
+          <a class="btn ghost" routerLink="/member">登入後可收藏與留言</a>
+        }
+        <a class="btn ghost" routerLink="/videos">← 返回影視頻道</a>
+      </div>
     </div>
+
+    <h2 class="section-title">留言</h2>
+    @if (auth.member()) {
+      <div class="comment-form">
+        <textarea
+          [(ngModel)]="commentBody"
+          rows="2"
+          maxlength="500"
+          placeholder="寫下你的留言…"
+        ></textarea>
+        <button class="btn" (click)="submitComment()">送出留言</button>
+        @if (commentMsg()) {
+          <p class="comment-msg">{{ commentMsg() }}</p>
+        }
+      </div>
+    }
+    <ul class="comment-list">
+      @for (c of comments(); track c.id) {
+        <li>
+          <div class="comment-head">
+            <strong>{{ c.author }}</strong>
+            <span class="dim">{{ c.createdAt | date: 'MM/dd HH:mm' }}</span>
+            @if (canDelete(c)) {
+              <button class="btn-mini" (click)="removeComment(c.id)">刪除</button>
+            }
+          </div>
+          <p>{{ c.body }}</p>
+        </li>
+      } @empty {
+        <li class="dim">還沒有留言，來搶頭香</li>
+      }
+    </ul>
 
     @if (related().length > 0) {
       <h2 class="section-title">相關推薦</h2>

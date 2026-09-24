@@ -1,6 +1,37 @@
 <div class="container page">
   <h2 class="section-title">星光電台</h2>
 
+  @if (playing(); as pl) {
+    <div class="player-bar">
+      <div class="eq" aria-hidden="true">
+        <span></span><span></span><span></span><span></span>
+      </div>
+      <div class="np">
+        <strong>{{ pl.name }}</strong>
+        <span class="freq">{{ pl.frequency }}</span>
+        @if (currentProgram(pl.id); as cp) {
+          <span class="np-program">現正播出：{{ cp.title }} · DJ {{ cp.dj }}</span>
+        }
+      </div>
+      @if (pl.live) {
+        <span class="live-dot">● LIVE</span>
+      }
+      <button class="play-btn playing" (click)="togglePlay(pl)">■ 停止</button>
+      <input
+        type="range"
+        class="vol"
+        min="0"
+        max="100"
+        [value]="volume()"
+        (input)="setVolume(+$any($event.target).value)"
+        aria-label="音量"
+      />
+    </div>
+  }
+  @if (streamError()) {
+    <p class="stream-err">{{ streamError() }}</p>
+  }
+
   <div class="channels">
     @for (c of channels(); track c.id) {
       <div class="channel-card" [class.active]="selected()?.id === c.id" (click)="pick(c)">
@@ -29,11 +60,16 @@
   @if (selected(); as ch) {
     <h2 class="section-title">{{ ch.name }} 節目表</h2>
     <div class="program-list">
-      @for (p of programs(); track p.id) {
-        <div class="program">
+      @for (p of programsOf(ch.id); track p.id) {
+        <div class="program" [class.now]="isNow(p.timeSlot)">
           <div class="time">{{ p.timeSlot }}</div>
           <div class="info">
-            <h3>{{ p.title }} <span class="tag">{{ p.category }}</span></h3>
+            <h3>
+              {{ p.title }} <span class="tag">{{ p.category }}</span>
+              @if (isNow(p.timeSlot)) {
+                <span class="now-badge">現正播出</span>
+              }
+            </h3>
             <p>{{ p.description }}</p>
           </div>
           <div class="dj">DJ {{ p.dj }}</div>

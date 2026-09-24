@@ -1,0 +1,246 @@
+<div class="container page">
+  <h2 class="section-title">管理後台</h2>
+
+  @if (auth.member(); as m) {
+    @if (m.role === 'ADMIN') {
+      @if (message()) {
+        <p class="msg ok">{{ message() }}</p>
+      }
+
+      <h3 class="sub-title">待審核影片</h3>
+      @if (pendingUploads().length > 0) {
+        <div class="review-list">
+          @for (u of pendingUploads(); track u.id) {
+            <div class="review-item">
+              <div class="review-head">
+                <strong>{{ u.title }}</strong>
+                <span class="dim">{{ u.uploader }} · {{ u.createdAt | date: 'MM/dd HH:mm' }}</span>
+              </div>
+              <p class="dim">{{ u.description || '（無簡介）' }} · {{ u.originalFilename }}</p>
+              <div class="review-actions">
+                <input [(ngModel)]="reviewNote[u.id]" placeholder="審核備註（選填）" />
+                <button class="btn" (click)="review(u.id, true)">通過上架</button>
+                <button class="btn ghost" (click)="review(u.id, false)">退回</button>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="empty">目前沒有待審核影片</p>
+      }
+
+      <h3 class="sub-title">待審核投稿</h3>
+      @if (pendingPosts().length > 0) {
+        <div class="review-list">
+          @for (p of pendingPosts(); track p.id) {
+            <div class="review-item">
+              <div class="review-head">
+                <strong>
+                  <span class="tag">{{ postTypeLabel(p.type) }}</span> {{ p.title }}
+                </strong>
+                <span class="dim">{{ p.author }} · {{ p.createdAt | date: 'MM/dd HH:mm' }}</span>
+              </div>
+              <p class="dim">
+                {{ p.body || p.originalFilename || '（無內容預覽）' }}
+              </p>
+              <div class="review-actions">
+                <input [(ngModel)]="reviewNote[-p.id]" placeholder="審核備註（選填）" />
+                <button class="btn" (click)="reviewPost(p.id, true)">通過上架</button>
+                <button class="btn ghost" (click)="reviewPost(p.id, false)">退回</button>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="empty">目前沒有待審核投稿</p>
+      }
+
+      <h3 class="sub-title">已上架影片</h3>
+      @if (approvedUploads().length > 0) {
+        <div class="review-list">
+          @for (u of approvedUploads(); track u.id) {
+            <div class="review-item">
+              <div class="review-head">
+                <strong>{{ u.title }}</strong>
+                <span class="dim">{{ u.uploader }} · {{ u.createdAt | date: 'MM/dd HH:mm' }}</span>
+              </div>
+              <div class="review-actions">
+                <button class="btn ghost" (click)="takedownUpload(u.id)">下架</button>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="empty">目前沒有已上架的會員影片</p>
+      }
+
+      <h3 class="sub-title">已上架投稿</h3>
+      @if (approvedPosts().length > 0) {
+        <div class="review-list">
+          @for (p of approvedPosts(); track p.id) {
+            <div class="review-item">
+              <div class="review-head">
+                <strong>
+                  <span class="tag">{{ postTypeLabel(p.type) }}</span> {{ p.title }}
+                </strong>
+                <span class="dim">{{ p.author }} · {{ p.createdAt | date: 'MM/dd HH:mm' }}</span>
+              </div>
+              <div class="review-actions">
+                <button class="btn ghost" (click)="takedownPost(p.id)">下架</button>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="empty">目前沒有已上架的投稿</p>
+      }
+
+      <h3 class="sub-title">內容管理 — 新聞</h3>
+      <div class="review-item">
+        <div class="content-form">
+          <input [(ngModel)]="newsForm.title" placeholder="新聞標題（必填）" />
+          <input [(ngModel)]="newsForm.category" placeholder="分類（如：娛樂、影視）" />
+          <input [(ngModel)]="newsForm.summary" placeholder="摘要" />
+          <input [(ngModel)]="newsForm.author" placeholder="作者" />
+          <input [(ngModel)]="newsForm.source" placeholder="來源" />
+          <input [(ngModel)]="newsForm.imageUrl" placeholder="主圖 URL" />
+          <textarea
+            [(ngModel)]="newsForm.content"
+            rows="3"
+            placeholder="新聞內文"
+          ></textarea>
+          <label class="check">
+            <input type="checkbox" [(ngModel)]="newsForm.breaking" /> 設為快訊
+          </label>
+          <button class="btn" (click)="submitNews()">新增新聞</button>
+        </div>
+      </div>
+      @if (managedNews().length > 0) {
+        <div class="review-list">
+          @for (n of managedNews(); track n.id) {
+            <div class="review-item">
+              <div class="review-head">
+                <strong>{{ n.title }}</strong>
+                <span class="dim">{{ n.category || '未分類' }}</span>
+              </div>
+              <div class="review-actions">
+                <button class="btn ghost" (click)="deleteNews(n.id)">刪除</button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <h3 class="sub-title">內容管理 — 雜誌</h3>
+      <div class="review-item">
+        <div class="content-form">
+          <input [(ngModel)]="magForm.title" placeholder="雜誌名稱（必填）" />
+          <input [(ngModel)]="magForm.issueNo" placeholder="期號（如：NO.522）" />
+          <input [(ngModel)]="magForm.category" placeholder="分類" />
+          <input
+            [(ngModel)]="magForm.publishDate"
+            placeholder="出版日期（如：2026-09-25）"
+          />
+          <input [(ngModel)]="magForm.price" type="number" min="0" placeholder="售價" />
+          <input [(ngModel)]="magForm.cover" placeholder="封面 URL" />
+          <input [(ngModel)]="magForm.coverStory" placeholder="封面故事" />
+          <textarea
+            [(ngModel)]="magForm.highlights"
+            rows="2"
+            placeholder="內容亮點（一行一條）"
+          ></textarea>
+          <label class="check">
+            <input type="checkbox" [(ngModel)]="magForm.latest" /> 最新刊
+          </label>
+          <button class="btn" (click)="submitMagazine()">新增雜誌</button>
+        </div>
+      </div>
+      @if (managedMagazines().length > 0) {
+        <div class="review-list">
+          @for (mg of managedMagazines(); track mg.id) {
+            <div class="review-item">
+              <div class="review-head">
+                <strong>{{ mg.title }} {{ mg.issueNo }}</strong>
+                <span class="dim">NT$ {{ mg.price }}</span>
+              </div>
+              <div class="review-actions">
+                <button class="btn ghost" (click)="deleteMagazine(mg.id)">刪除</button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <h3 class="sub-title">內容管理 — 商品</h3>
+      <div class="review-item">
+        <div class="content-form">
+          <input [(ngModel)]="prodForm.name" placeholder="商品名稱（必填）" />
+          <input [(ngModel)]="prodForm.category" placeholder="分類" />
+          <input [(ngModel)]="prodForm.price" type="number" min="0" placeholder="售價" />
+          <input
+            [(ngModel)]="prodForm.originalPrice"
+            type="number"
+            min="0"
+            placeholder="原價"
+          />
+          <input [(ngModel)]="prodForm.stock" type="number" min="0" placeholder="庫存" />
+          <input [(ngModel)]="prodForm.image" placeholder="圖片 URL" />
+          <textarea
+            [(ngModel)]="prodForm.description"
+            rows="2"
+            placeholder="商品描述"
+          ></textarea>
+          <button class="btn" (click)="submitProduct()">新增商品</button>
+        </div>
+      </div>
+      @if (managedProducts().length > 0) {
+        <div class="review-list">
+          @for (p of managedProducts(); track p.id) {
+            <div class="review-item">
+              <div class="review-head">
+                <strong>{{ p.name }}</strong>
+                <span class="dim">NT$ {{ p.price }} · 庫存 {{ p.stock }}</span>
+              </div>
+              <div class="review-actions">
+                <button class="btn ghost" (click)="deleteProduct(p.id)">刪除</button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <h3 class="sub-title">會員帳務管理</h3>
+      <table class="tx-table">
+        <thead>
+          <tr>
+            <th>會員</th><th>等級</th><th>餘額</th><th>調整</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (mem of allMembers(); track mem.id) {
+            <tr>
+              <td>{{ mem.nickname }}<br /><span class="dim">{{ mem.username }}</span></td>
+              <td>{{ mem.role === 'ADMIN' ? '管理員' : mem.level }}</td>
+              <td>NT$ {{ mem.balance | number: '1.0-0' }}</td>
+              <td class="adjust-cell">
+                <input
+                  type="number"
+                  [(ngModel)]="adjustAmount[mem.id]"
+                  placeholder="金額"
+                  min="1"
+                />
+                <input [(ngModel)]="adjustNote[mem.id]" placeholder="備註" />
+                <button class="btn" (click)="adjust(mem.id, 'TOPUP')">儲值</button>
+                <button class="btn ghost" (click)="adjust(mem.id, 'CONSUME')">扣款</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    } @else {
+      <p class="empty">此頁面僅限管理員使用</p>
+    }
+  } @else {
+    <p class="empty">請先登入管理員帳號</p>
+  }
+</div>

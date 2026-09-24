@@ -53,6 +53,12 @@ spring:
               predicates:
                 - Path=/api/posts/**
 
+starmusic:
+  jwt-secret: ${STARMUSIC_JWT_SECRET:starmusic-dev-secret-do-not-use-in-prod-0123456789}
+
+starmusic:
+  jwt-secret: ${STARMUSIC_JWT_SECRET:starmusic-dev-secret-do-not-use-in-prod-0123456789}
+
 eureka:
   client:
     service-url:

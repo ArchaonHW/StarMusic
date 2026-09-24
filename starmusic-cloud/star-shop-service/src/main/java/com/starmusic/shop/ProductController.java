@@ -1,13 +1,22 @@
 package com.starmusic.shop;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/api/products")
@@ -45,24 +54,120 @@ public class ProductController {
                     "虛擬偶像星塵少女官方授權全息投影公仔。")
     );
 
+    public record ProductRequest(String name, String category, Double price,
+                                 Double originalPrice, String image, Double rating,
+                                 Integer stock, String description) {
+    }
+
+    private static final long MANAGED_ID_BASE = 10000;
+    private static final int MAX_NAME = 200;
+    private static final int MAX_SHORT = 100;
+    private static final int MAX_TEXT = 2000;
+
+    private final ProductRepository products;
+
+    public ProductController(ProductRepository products) {
+        this.products = products;
+    }
+
     @GetMapping
     public List<Product> list(@RequestParam(required = false) String category) {
-        return PRODUCTS.stream()
+        return all()
                 .filter(p -> category == null || p.category().equals(category))
                 .toList();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Product> get(@PathVariable long id) {
-        return PRODUCTS.stream()
-                .filter(p -> p.id() == id)
-                .findFirst()
+        return findProduct(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/categories")
     public List<String> categories() {
-        return PRODUCTS.stream().map(Product::category).distinct().toList();
+        return all().map(Product::category).distinct().toList();
+    }
+
+    @GetMapping("/manage")
+    public List<Product> managed(
+            @RequestHeader(value = "X-User-Role", required = false) String role) {
+        requireAdmin(role);
+        return products.findAll().stream()
+                .sorted(Comparator.comparing(ProductEntity::getId).reversed())
+                .map(this::fromEntity)
+                .toList();
+    }
+
+    @PostMapping("/manage")
+    public Product create(@RequestBody(required = false) ProductRequest req,
+                          @RequestHeader(value = "X-User-Role", required = false) String role) {
+        requireAdmin(role);
+        if (req == null || req.name() == null || req.name().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "商品名稱必填");
+        }
+        if (req.name().length() > MAX_NAME) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "名稱過長");
+        }
+        checkLen(req.category(), MAX_SHORT, "分類");
+        checkLen(req.description(), MAX_TEXT, "描述");
+        if (req.price() != null && req.price() < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "價格不可為負");
+        }
+        if (req.stock() != null && req.stock() < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "庫存不可為負");
+        }
+
+        ProductEntity e = new ProductEntity();
+        e.setName(req.name().trim());
+        e.setCategory(req.category());
+        e.setPrice(req.price() == null ? 0 : req.price());
+        e.setOriginalPrice(req.originalPrice() == null ? 0 : req.originalPrice());
+        e.setImage(req.image());
+        e.setRating(req.rating() == null ? 0 : req.rating());
+        e.setStock(req.stock() == null ? 0 : req.stock());
+        e.setDescription(req.description());
+        return fromEntity(products.save(e));
+    }
+
+    @DeleteMapping("/manage/{id}")
+    public ResponseEntity<Void> deleteManaged(
+            @PathVariable long id,
+            @RequestHeader(value = "X-User-Role", required = false) String role) {
+        requireAdmin(role);
+        long dbId = id - MANAGED_ID_BASE;
+        if (!products.existsById(dbId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "商品不存在或為內建資料");
+        }
+        products.deleteById(dbId);
+        return ResponseEntity.noContent().build();
+    }
+
+    Optional<Product> findProduct(long id) {
+        return all().filter(p -> p.id() == id).findFirst();
+    }
+
+    private Stream<Product> all() {
+        return Stream.concat(
+                PRODUCTS.stream(),
+                products.findAll().stream().map(this::fromEntity));
+    }
+
+    private Product fromEntity(ProductEntity e) {
+        return new Product(MANAGED_ID_BASE + e.getId(), e.getName(), e.getCategory(),
+                e.getPrice(), e.getOriginalPrice(), e.getImage(), e.getRating(),
+                e.getStock(), e.getDescription());
+    }
+
+    private void requireAdmin(String role) {
+        if (!"ADMIN".equals(role)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "需要管理員權限");
+        }
+    }
+
+    private void checkLen(String v, int max, String label) {
+        if (v != null && v.length() > max) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, label + "過長");
+        }
     }
 }

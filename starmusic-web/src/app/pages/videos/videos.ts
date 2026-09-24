@@ -110,7 +110,42 @@ export class Videos implements OnInit, OnDestroy {
   }
 
   statusLabel(status: string): string {
-    return { PENDING: '待審核', APPROVED: '已上架', REJECTED: '已退回' }[status] ?? status;
+    return { PENDING: '待審核', APPROVED: '已上架', REJECTED: '已退回', TAKEN_DOWN: '已下架' }[
+      status
+    ] ?? status;
+  }
+
+  takedown(id: number): void {
+    this.api.takedownUpload(id).subscribe({
+      next: () => {
+        this.uploadMsg.set('已下架');
+        this.loadMyUploads();
+      },
+      error: (e) => this.uploadMsg.set(e.error?.message ?? '下架失敗')
+    });
+  }
+
+  resubmit(id: number): void {
+    this.api.resubmitUpload(id).subscribe({
+      next: () => {
+        this.uploadMsg.set('已重新送出，等待管理員審核');
+        this.loadMyUploads();
+      },
+      error: (e) => this.uploadMsg.set(e.error?.message ?? '重新送審失敗')
+    });
+  }
+
+  remove(id: number): void {
+    if (!confirm('確定要刪除此影片？此操作無法復原。')) {
+      return;
+    }
+    this.api.deleteUpload(id).subscribe({
+      next: () => {
+        this.uploadMsg.set('已刪除');
+        this.loadMyUploads();
+      },
+      error: (e) => this.uploadMsg.set(e.error?.message ?? '刪除失敗')
+    });
   }
 
   private loadMyUploads(): void {

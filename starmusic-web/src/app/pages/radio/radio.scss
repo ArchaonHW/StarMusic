@@ -1,3 +1,94 @@
+.player-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: linear-gradient(135deg, #241d4d, #3b1d4d);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius);
+  padding: 14px 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 0 18px rgba(232, 62, 140, 0.25);
+
+  .np {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    strong {
+      font-size: 16px;
+    }
+
+    .np-program {
+      font-size: 12.5px;
+      color: var(--gold);
+    }
+  }
+
+  .vol {
+    width: 110px;
+    accent-color: var(--primary);
+  }
+}
+
+.eq {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 22px;
+
+  span {
+    width: 4px;
+    background: var(--gold);
+    border-radius: 2px;
+    animation: eq-bounce 0.9s ease-in-out infinite;
+  }
+
+  span:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+
+  span:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+
+  span:nth-child(4) {
+    animation-delay: 0.6s;
+  }
+}
+
+.stream-err {
+  color: #ff7070;
+  font-size: 13px;
+  margin: 0 0 16px;
+}
+
+.program.now {
+  border: 1px solid var(--gold);
+  box-shadow: 0 0 12px rgba(245, 197, 24, 0.15);
+}
+
+.now-badge {
+  background: var(--gold);
+  color: #241a02;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 8px;
+  margin-left: 6px;
+}
+
+@keyframes eq-bounce {
+  0%,
+  100% {
+    height: 6px;
+  }
+
+  50% {
+    height: 22px;
+  }
+}
+
 .channels {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));

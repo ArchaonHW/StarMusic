@@ -14,6 +14,15 @@ export interface Video {
   updateNote: string | null;
 }
 
+export interface VideoComment {
+  id: number;
+  videoId: number;
+  memberId: number;
+  author: string;
+  body: string;
+  createdAt: string;
+}
+
 export interface VideoSection {
   category: string;
   videos: Video[];
@@ -121,7 +130,7 @@ export interface VideoUpload {
   description: string;
   originalFilename: string;
   uploader: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'TAKEN_DOWN';
   reviewNote: string;
   createdAt: string;
   reviewedAt: string | null;
@@ -142,6 +151,14 @@ export interface LoginResponse {
   member: Member;
 }
 
+export interface Page<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+}
+
 export interface Post {
   id: number;
   type: 'VIDEO' | 'AUDIO' | 'IMAGE' | 'ARTICLE';
@@ -151,10 +168,25 @@ export interface Post {
   mediaUrl: string | null;
   originalFilename: string;
   author: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'TAKEN_DOWN';
   reviewNote: string;
+  likeCount: number;
   createdAt: string;
   reviewedAt: string | null;
+}
+
+export interface WatchHistoryItem {
+  video: Video;
+  watchedAt: string;
+}
+
+export interface PostComment {
+  id: number;
+  postId: number;
+  author: string;
+  body: string;
+  memberId: number;
+  createdAt: string;
 }
 
 export interface SearchResult {

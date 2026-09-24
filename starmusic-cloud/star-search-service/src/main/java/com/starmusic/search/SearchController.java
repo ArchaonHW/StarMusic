@@ -1,32 +1,20 @@
 package com.starmusic.search;
 
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpMethod;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/search")
 public class SearchController {
-
-    private static final ParameterizedTypeReference<List<Map<String, Object>>> LIST_OF_MAP =
-            new ParameterizedTypeReference<>() {
-            };
-
-    private final RestTemplate restTemplate;
-
-    public SearchController(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
-    }
 
     public record SearchResult(String keyword, int total,
                                List<Map<String, Object>> videos,
@@ -38,30 +26,47 @@ public class SearchController {
                                List<Map<String, Object>> posts) {
     }
 
+    private final VideoClient videos;
+    private final NewsClient news;
+    private final MagazineClient magazines;
+    private final ShopClient shop;
+    private final RadioClient radio;
+    private final PostClient posts;
+
+    public SearchController(VideoClient videos, NewsClient news, MagazineClient magazines,
+                            ShopClient shop, RadioClient radio, PostClient posts) {
+        this.videos = videos;
+        this.news = news;
+        this.magazines = magazines;
+        this.shop = shop;
+        this.radio = radio;
+        this.posts = posts;
+    }
+
     @GetMapping
     public SearchResult search(@RequestParam(defaultValue = "") String q) {
         String kw = q.trim().toLowerCase(Locale.ROOT);
 
         List<Map<String, Object>> videos = filter(
-                fetch("http://star-video-service/api/videos"), kw,
+                safe(this.videos::videos), kw,
                 "title", "category", "description", "tags");
         List<Map<String, Object>> news = filter(
-                fetch("http://star-news-service/api/news"), kw,
+                safe(this.news::news), kw,
                 "title", "category", "summary", "content", "author", "source");
         List<Map<String, Object>> magazines = filter(
-                fetch("http://star-magazine-service/api/magazines"), kw,
+                safe(this.magazines::magazines), kw,
                 "title", "issueNo", "category", "coverStory", "highlights");
         List<Map<String, Object>> products = filter(
-                fetch("http://star-shop-service/api/products"), kw,
+                safe(shop::products), kw,
                 "name", "category", "description");
         List<Map<String, Object>> channels = filter(
-                fetch("http://star-radio-service/api/radio/channels"), kw,
+                safe(radio::channels), kw,
                 "name", "frequency", "slogan", "genre");
         List<Map<String, Object>> programs = filter(
-                fetch("http://star-radio-service/api/radio/programs"), kw,
+                safe(radio::programs), kw,
                 "title", "dj", "category", "description");
         List<Map<String, Object>> posts = filter(
-                fetch("http://star-post-service/api/posts"), kw,
+                pageContent(() -> this.posts.posts(50)), kw,
                 "title", "category", "body", "author");
 
         int total = videos.size() + news.size() + magazines.size()
@@ -70,12 +75,25 @@ public class SearchController {
                 videos, news, magazines, products, channels, programs, posts);
     }
 
-    private List<Map<String, Object>> fetch(String url) {
+    private List<Map<String, Object>> safe(Supplier<List<Map<String, Object>>> call) {
         try {
-            List<Map<String, Object>> body = restTemplate
-                    .exchange(url, HttpMethod.GET, null, LIST_OF_MAP)
-                    .getBody();
+            List<Map<String, Object>> body = call.get();
             return body == null ? List.of() : body;
+        } catch (Exception e) {
+            return List.of();
+        }
+    }
+
+    private List<Map<String, Object>> pageContent(Supplier<Map<String, Object>> call) {
+        try {
+            Map<String, Object> body = call.get();
+            if (body == null || !(body.get("content") instanceof List<?> content)) {
+                return List.of();
+            }
+            return content.stream()
+                    .filter(Map.class::isInstance)
+                    .map(m -> (Map<String, Object>) m)
+                    .toList();
         } catch (Exception e) {
             return List.of();
         }

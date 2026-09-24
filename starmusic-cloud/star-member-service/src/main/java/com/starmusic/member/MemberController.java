@@ -25,7 +25,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -73,14 +72,17 @@ public class MemberController {
     private final TransactionRepository transactions;
     private final AuthTokenRepository tokens;
     private final PasswordEncoder encoder;
+    private final JwtSupport jwt;
     private final LoginThrottle throttle = new LoginThrottle();
 
     public MemberController(MemberRepository members, TransactionRepository transactions,
-                            AuthTokenRepository tokens, PasswordEncoder encoder) {
+                            AuthTokenRepository tokens, PasswordEncoder encoder,
+                            JwtSupport jwt) {
         this.members = members;
         this.transactions = transactions;
         this.tokens = tokens;
         this.encoder = encoder;
+        this.jwt = jwt;
     }
 
     @PostMapping("/register")
@@ -110,12 +112,9 @@ public class MemberController {
                     return new ResponseStatusException(HttpStatus.UNAUTHORIZED, "帳號或密碼錯誤");
                 });
         throttle.ok(req.username());
-
-        tokens.deleteExpired(Instant.now());
-        AuthTokenEntity token = new AuthTokenEntity(
-                "star-" + UUID.randomUUID(), m.getId(), Instant.now().plus(TOKEN_TTL));
-        tokens.save(token);
-        return new LoginResponse(token.getToken(), MemberDto.of(m));
+        return new LoginResponse(
+                jwt.issue(m.getId(), m.getUsername(), m.getRole(), TOKEN_TTL),
+                MemberDto.of(m));
     }
 
     @PostMapping("/logout")
@@ -184,7 +183,9 @@ public class MemberController {
         t.setAmount(req.amount());
         t.setBalanceAfter(after);
         t.setNote(req.note());
-        t.setOperator(operator == null || operator.isBlank() ? "ADMIN" : operator);
+        String op = operator == null ? null
+                : java.net.URLDecoder.decode(operator, java.nio.charset.StandardCharsets.UTF_8);
+        t.setOperator(op == null || op.isBlank() ? "ADMIN" : op);
         return TransactionDto.of(transactions.save(t));
     }
 
@@ -209,6 +210,11 @@ public class MemberController {
         if (token == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "未登入");
         }
+        Long memberId = jwtMemberId(token);
+        if (memberId != null) {
+            return find(memberId);
+        }
+        // 相容舊版不透明 token（star-*，存於 auth_tokens 表）
         AuthTokenEntity t = tokens.findById(token).orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "登入已失效"));
         if (t.getExpiresAt().isBefore(Instant.now())) {
@@ -216,6 +222,14 @@ public class MemberController {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "登入已過期");
         }
         return find(t.getMemberId());
+    }
+
+    private Long jwtMemberId(String token) {
+        try {
+            return Long.valueOf(jwt.parse(token).getPayload().getSubject());
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private String bearerToken(String authorization) {

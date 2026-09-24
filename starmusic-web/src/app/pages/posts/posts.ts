@@ -1,13 +1,14 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { Post } from '../../models';
 
 @Component({
   selector: 'app-posts',
-  imports: [FormsModule, DatePipe],
+  imports: [FormsModule, DatePipe, RouterLink],
   templateUrl: './posts.html',
   styleUrl: './posts.scss'
 })
@@ -18,6 +19,9 @@ export class PostsPage implements OnInit {
   protected readonly posts = signal<Post[]>([]);
   protected readonly myPosts = signal<Post[]>([]);
   protected readonly activeType = signal('');
+  protected readonly hasMore = signal(false);
+  private page = 0;
+  private static readonly PAGE_SIZE = 12;
 
   protected postType: Post['type'] = 'VIDEO';
   protected postTitle = '';
@@ -41,7 +45,13 @@ export class PostsPage implements OnInit {
 
   select(type: string): void {
     this.activeType.set(type);
+    this.page = 0;
     this.load();
+  }
+
+  loadMore(): void {
+    this.page++;
+    this.load(true);
   }
 
   acceptFor(type: string): string {
@@ -101,17 +111,59 @@ export class PostsPage implements OnInit {
   }
 
   statusLabel(status: string): string {
-    return { PENDING: '待審核', APPROVED: '已上架', REJECTED: '已退回' }[status] ?? status;
+    return { PENDING: '待審核', APPROVED: '已上架', REJECTED: '已退回', TAKEN_DOWN: '已下架' }[
+      status
+    ] ?? status;
   }
 
-  private load(): void {
-    this.api.posts(this.activeType() || undefined).subscribe((p) => this.posts.set(p));
+  takedown(id: number): void {
+    this.api.takedownPost(id).subscribe({
+      next: () => {
+        this.msg.set('已下架');
+        this.loadMine();
+        this.load();
+      },
+      error: (e) => this.msg.set(e.error?.message ?? '下架失敗')
+    });
+  }
+
+  resubmit(id: number): void {
+    this.api.resubmitPost(id).subscribe({
+      next: () => {
+        this.msg.set('已重新送出，等待管理員審核');
+        this.loadMine();
+      },
+      error: (e) => this.msg.set(e.error?.message ?? '重新送審失敗')
+    });
+  }
+
+  remove(id: number): void {
+    if (!confirm('確定要刪除此投稿？此操作無法復原。')) {
+      return;
+    }
+    this.api.deletePost(id).subscribe({
+      next: () => {
+        this.msg.set('已刪除');
+        this.loadMine();
+        this.load();
+      },
+      error: (e) => this.msg.set(e.error?.message ?? '刪除失敗')
+    });
+  }
+
+  private load(append = false): void {
+    this.api
+      .posts(this.activeType() || undefined, this.page, PostsPage.PAGE_SIZE)
+      .subscribe((p) => {
+        this.posts.update((list) => (append ? [...list, ...p.content] : p.content));
+        this.hasMore.set(p.number + 1 < p.totalPages);
+      });
   }
 
   private loadMine(): void {
     if (this.auth.member()) {
       this.api.myPosts().subscribe({
-        next: (p) => this.myPosts.set(p),
+        next: (p) => this.myPosts.set(p.content),
         error: () => this.myPosts.set([])
       });
     }
