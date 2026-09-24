@@ -1,0 +1,105 @@
+<div class="container page">
+  <h2 class="section-title">會員投稿</h2>
+
+  @if (auth.member()) {
+    <details class="upload-box">
+      <summary>發表新內容（送管理員審核）</summary>
+      <div class="upload-form">
+        <select [(ngModel)]="postType">
+          @for (t of types; track t.value) {
+            <option [value]="t.value">{{ t.label }}</option>
+          }
+        </select>
+        <input [(ngModel)]="postTitle" placeholder="標題（必填）" />
+        <input [(ngModel)]="postCategory" placeholder="分類（選填，如：日常、翻唱、遊戲）" />
+        <textarea
+          [(ngModel)]="postBody"
+          rows="4"
+          [placeholder]="postType === 'ARTICLE' ? '文章內文（必填）' : '簡介（選填）'"
+        ></textarea>
+        <label class="file-label">
+          {{ postType === 'ARTICLE' ? '封面圖（選填）' : '檔案（必填）' }}
+        </label>
+        <input type="file" [accept]="acceptFor(postType)" (change)="onFile($event)" />
+        <button class="btn" [disabled]="uploading()" (click)="submit()">
+          {{ uploading() ? '送出中…' : '送出審核' }}
+        </button>
+        @if (msg()) {
+          <p class="upload-msg">{{ msg() }}</p>
+        }
+      </div>
+      @if (myPosts().length > 0) {
+        <ul class="my-posts">
+          @for (p of myPosts(); track p.id) {
+            <li>
+              <span class="st" [class]="'st ' + p.status">{{ statusLabel(p.status) }}</span>
+              <span class="tag">{{ typeLabel(p.type) }}</span>
+              {{ p.title }}
+              <span class="dim">{{ p.createdAt | date: 'MM/dd HH:mm' }}</span>
+              @if (p.status === 'REJECTED' && p.reviewNote) {
+                <span class="note">退回原因：{{ p.reviewNote }}</span>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </details>
+  } @else {
+    <p class="hint">登入會員即可投稿：影片、音訊、圖片、文章皆可，送出後由管理員審核上架。</p>
+  }
+
+  <div class="tabs">
+    <button [class.active]="activeType() === ''" (click)="select('')">全部</button>
+    @for (t of types; track t.value) {
+      <button [class.active]="activeType() === t.value" (click)="select(t.value)">
+        {{ t.label }}
+      </button>
+    }
+  </div>
+
+  <div class="grid">
+    @for (p of posts(); track p.id) {
+      <div class="card post-card">
+        @switch (p.type) {
+          @case ('VIDEO') {
+            <video class="media" [src]="p.mediaUrl" controls preload="metadata"></video>
+          }
+          @case ('AUDIO') {
+            <div class="media audio-box">
+              <span class="audio-icon">🎵</span>
+              <audio [src]="p.mediaUrl" controls preload="metadata"></audio>
+            </div>
+          }
+          @case ('IMAGE') {
+            <img class="media" [src]="p.mediaUrl" [alt]="p.title" loading="lazy" />
+          }
+          @case ('ARTICLE') {
+            @if (p.mediaUrl) {
+              <img class="media" [src]="p.mediaUrl" [alt]="p.title" loading="lazy" />
+            } @else {
+              <div class="media article-box">📝</div>
+            }
+          }
+        }
+        <div class="card-body">
+          <div class="post-meta">
+            <span class="type-badge">{{ typeLabel(p.type) }}</span>
+            @if (p.category) {
+              <span class="cat">{{ p.category }}</span>
+            }
+          </div>
+          <h3>{{ p.title }}</h3>
+          @if (p.body) {
+            <p>{{ p.body }}</p>
+          }
+          <div class="meta">
+            <span>{{ p.author }}</span>
+            <span>{{ p.createdAt | date: 'yyyy/MM/dd' }}</span>
+          </div>
+        </div>
+      </div>
+    } @empty {
+      <p class="empty">目前沒有這類型的投稿</p>
+    }
+  </div>
+</div>

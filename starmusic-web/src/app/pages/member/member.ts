@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { AuthService } from '../../core/auth.service';
 import { ApiService } from '../../core/api.service';
-import { AccountTransaction, Member, VideoUpload } from '../../models';
+import { AccountTransaction, Member, Post, VideoUpload } from '../../models';
 
 @Component({
   selector: 'app-member',
@@ -25,6 +25,7 @@ export class MemberPage {
 
   protected readonly transactions = signal<AccountTransaction[]>([]);
   protected readonly pendingUploads = signal<VideoUpload[]>([]);
+  protected readonly pendingPosts = signal<Post[]>([]);
   protected readonly allMembers = signal<Member[]>([]);
   protected reviewNote: Record<number, string> = {};
   protected adjustAmount: Record<number, number> = {};
@@ -45,13 +46,21 @@ export class MemberPage {
     });
   }
 
+  private errMsg(e: { status?: number }, fallback: string): string {
+    if (e?.status === 429) return '嘗試次數過多，請稍後再試';
+    if (e?.status === 401) return '帳號或密碼錯誤';
+    if (e?.status === 403) return '沒有權限';
+    if (e?.status === 409) return '帳號已被使用';
+    return fallback;
+  }
+
   submit(): void {
     this.error.set('');
     this.message.set('');
     if (this.mode === 'login') {
       this.auth.login(this.username, this.password).subscribe({
         next: () => this.message.set('登入成功，歡迎回來！'),
-        error: (e) => this.error.set(e.error?.message ?? e.error ?? '登入失敗')
+        error: (e) => this.error.set(this.errMsg(e, '登入失敗'))
       });
     } else {
       this.api
@@ -66,7 +75,7 @@ export class MemberPage {
             this.message.set('註冊成功，請登入');
             this.mode = 'login';
           },
-          error: (e) => this.error.set(e.error?.message ?? e.error ?? '註冊失敗')
+          error: (e) => this.error.set(this.errMsg(e, '註冊失敗'))
         });
     }
   }
@@ -87,6 +96,18 @@ export class MemberPage {
       this.message.set(approve ? '已通過審核並上架' : '已退回該影片');
       this.loadAdmin();
     });
+  }
+
+  reviewPost(id: number, approve: boolean): void {
+    const note = this.reviewNote[-id];
+    this.api.reviewPost(id, approve, note).subscribe(() => {
+      this.message.set(approve ? '投稿已通過上架' : '投稿已退回');
+      this.loadAdmin();
+    });
+  }
+
+  postTypeLabel(type: string): string {
+    return { VIDEO: '影片', AUDIO: '音訊', IMAGE: '圖片', ARTICLE: '文章' }[type] ?? type;
   }
 
   adjust(memberId: number, type: string): void {
@@ -117,6 +138,10 @@ export class MemberPage {
     this.api.adminUploads('PENDING').subscribe({
       next: (u) => this.pendingUploads.set(u),
       error: () => this.pendingUploads.set([])
+    });
+    this.api.pendingPosts().subscribe({
+      next: (p) => this.pendingPosts.set(p),
+      error: () => this.pendingPosts.set([])
     });
     this.api.members().subscribe({
       next: (m) => this.allMembers.set(m),

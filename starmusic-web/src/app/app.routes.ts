@@ -10,6 +10,7 @@ import { Shop } from './pages/shop/shop';
 import { CartPage } from './pages/cart/cart';
 import { MemberPage } from './pages/member/member';
 import { SearchPage } from './pages/search/search';
+import { PostsPage } from './pages/posts/posts';
 
 export const routes: Routes = [
   { path: '', component: Home, title: '星光全球娛樂台' },
@@ -23,5 +24,6 @@ export const routes: Routes = [
   { path: 'cart', component: CartPage, title: '購物車 - 星光全球娛樂台' },
   { path: 'member', component: MemberPage, title: '會員中心 - 星光全球娛樂台' },
   { path: 'search', component: SearchPage, title: '搜尋 - 星光全球娛樂台' },
+  { path: 'posts', component: PostsPage, title: '會員投稿 - 星光全球娛樂台' },
   { path: '**', redirectTo: '' }
 ];

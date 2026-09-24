@@ -1,15 +1,15 @@
 server:
-  port: 8081
+  port: 8088
 
 spring:
   application:
-    name: star-video-service
+    name: star-post-service
   servlet:
     multipart:
       max-file-size: 500MB
       max-request-size: 500MB
   datasource:
-    url: jdbc:h2:file:./data/videodb
+    url: jdbc:h2:file:./data/postdb
     driver-class-name: org.h2.Driver
     username: sa
     password: ${STARMUSIC_DB_PASSWORD:}
@@ -23,7 +23,6 @@ spring:
 
 starmusic:
   upload-dir: uploads
-  media-base: ''
 
 eureka:
   client:

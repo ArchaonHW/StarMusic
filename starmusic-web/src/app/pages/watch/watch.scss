@@ -78,6 +78,41 @@
   margin-bottom: 20px;
 }
 
+.vip-badge {
+  background: linear-gradient(90deg, #f5c518, #e8930c);
+  color: #241a02;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 10px;
+}
+
+.related-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.thumb {
+  position: relative;
+
+  .badge.vip {
+    background: linear-gradient(90deg, #f5c518, #e8930c);
+    color: #241a02;
+  }
+
+  .update-note {
+    position: absolute;
+    inset: auto 0 0;
+    padding: 4px 10px;
+    font-size: 11px;
+    color: #ffd97a;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.72));
+    text-align: right;
+    letter-spacing: 0;
+  }
+}
+
 .empty {
   text-align: center;
   color: var(--text-dim);

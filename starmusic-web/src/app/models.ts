@@ -9,6 +9,20 @@ export interface Video {
   tags: string[];
   hot: boolean;
   videoUrl: string | null;
+  vip: boolean;
+  featured: boolean;
+  updateNote: string | null;
+}
+
+export interface VideoSection {
+  category: string;
+  videos: Video[];
+}
+
+export interface VideoHome {
+  featured: Video[];
+  sections: VideoSection[];
+  ranking: Video[];
 }
 
 export interface Channel {
@@ -128,6 +142,21 @@ export interface LoginResponse {
   member: Member;
 }
 
+export interface Post {
+  id: number;
+  type: 'VIDEO' | 'AUDIO' | 'IMAGE' | 'ARTICLE';
+  title: string;
+  category: string;
+  body: string;
+  mediaUrl: string | null;
+  originalFilename: string;
+  author: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  reviewNote: string;
+  createdAt: string;
+  reviewedAt: string | null;
+}
+
 export interface SearchResult {
   keyword: string;
   total: number;
@@ -137,4 +166,5 @@ export interface SearchResult {
   products: Product[];
   channels: Channel[];
   programs: Program[];
+  posts: Post[];
 }

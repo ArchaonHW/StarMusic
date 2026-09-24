@@ -1,13 +1,35 @@
 <section class="hero">
   <div class="container hero-inner">
     <div class="hero-text">
-      <p class="eyebrow">STAR MUSIC GLOBAL</p>
-      <h1>星光全球娛樂台</h1>
-      <p class="slogan">影視 · 電台 · 新聞 · 雜誌 · 購物，一站擁有全球娛樂</p>
-      <div class="hero-actions">
-        <a class="btn" routerLink="/videos">立即觀看</a>
-        <a class="btn ghost" routerLink="/radio">收聽直播</a>
-      </div>
+      @if (featured().length > 0) {
+        @let f = featured()[heroIndex() % featured().length];
+        <p class="eyebrow">STAR MUSIC GLOBAL · 精選推薦</p>
+        <p class="hero-cat">
+          {{ f.category }}
+          @if (f.vip) {
+            <span class="vip-badge">VIP 獨播</span>
+          }
+        </p>
+        <h1>{{ f.title }}</h1>
+        <p class="slogan">{{ f.description }}</p>
+        <div class="hero-actions">
+          <a class="btn" [routerLink]="['/videos', f.id]">▶ 立即觀看</a>
+          <a class="btn ghost" routerLink="/videos">影視頻道</a>
+        </div>
+        <div class="hero-dots">
+          @for (v of featured(); track v.id; let i = $index) {
+            <button [class.on]="heroIndex() === i" (click)="goHero(i)"></button>
+          }
+        </div>
+      } @else {
+        <p class="eyebrow">STAR MUSIC GLOBAL</p>
+        <h1>星光全球娛樂台</h1>
+        <p class="slogan">影視 · 電台 · 新聞 · 雜誌 · 購物，一站擁有全球娛樂</p>
+        <div class="hero-actions">
+          <a class="btn" routerLink="/videos">立即觀看</a>
+          <a class="btn ghost" routerLink="/radio">收聽直播</a>
+        </div>
+      }
     </div>
   </div>
 </section>

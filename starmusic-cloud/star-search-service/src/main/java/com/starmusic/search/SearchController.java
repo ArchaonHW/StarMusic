@@ -34,7 +34,8 @@ public class SearchController {
                                List<Map<String, Object>> magazines,
                                List<Map<String, Object>> products,
                                List<Map<String, Object>> channels,
-                               List<Map<String, Object>> programs) {
+                               List<Map<String, Object>> programs,
+                               List<Map<String, Object>> posts) {
     }
 
     @GetMapping
@@ -59,11 +60,14 @@ public class SearchController {
         List<Map<String, Object>> programs = filter(
                 fetch("http://star-radio-service/api/radio/programs"), kw,
                 "title", "dj", "category", "description");
+        List<Map<String, Object>> posts = filter(
+                fetch("http://star-post-service/api/posts"), kw,
+                "title", "category", "body", "author");
 
         int total = videos.size() + news.size() + magazines.size()
-                + products.size() + channels.size() + programs.size();
+                + products.size() + channels.size() + programs.size() + posts.size();
         return new SearchResult(q.trim(), total,
-                videos, news, magazines, products, channels, programs);
+                videos, news, magazines, products, channels, programs, posts);
     }
 
     private List<Map<String, Object>> fetch(String url) {

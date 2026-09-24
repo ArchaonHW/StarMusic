@@ -128,6 +128,24 @@
         </div>
       </section>
     }
+
+    @if (r.posts.length) {
+      <section class="group">
+        <h3 class="group-title">會員投稿 <span class="count">{{ r.posts.length }}</span></h3>
+        <div class="result-list">
+          @for (p of r.posts; track p.id) {
+            <a class="result-item" routerLink="/posts">
+              <div class="meta">
+                <span class="cat">{{ p.type }}</span>
+                <span>{{ p.author }}</span>
+              </div>
+              <h4>{{ p.title }}</h4>
+              <p>{{ p.body }}</p>
+            </a>
+          }
+        </div>
+      </section>
+    }
   } @else {
     <p class="empty">搜尋服務暫時無法使用，請確認 star-search-service 已啟動</p>
   }

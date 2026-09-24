@@ -19,6 +19,9 @@
     <div class="info">
       <div class="head">
         <h1>{{ v.title }}</h1>
+        @if (v.vip) {
+          <span class="vip-badge">VIP</span>
+        }
         @if (v.hot) {
           <span class="hot-badge">HOT</span>
         }
@@ -28,11 +31,44 @@
         @for (t of v.tags; track t) {
           <span class="tag">{{ t }}</span>
         }
-        <span class="views">{{ formatViews(v.views) }} 次觀看 · {{ v.duration }}</span>
+        <span class="views">
+          @if (v.updateNote) {
+            {{ v.updateNote }} ·
+          }
+          {{ formatViews(v.views) }} 次觀看 · {{ v.duration }}
+        </span>
       </div>
       <p class="desc">{{ v.description }}</p>
       <a class="btn ghost" routerLink="/videos">← 返回影視頻道</a>
     </div>
+
+    @if (related().length > 0) {
+      <h2 class="section-title">相關推薦</h2>
+      <div class="related-row">
+        @for (r of related(); track r.id) {
+          <a class="card" [routerLink]="['/videos', r.id]">
+            <div class="thumb">
+              @if (r.vip) {
+                <span class="badge vip">VIP</span>
+              } @else if (r.hot) {
+                <span class="badge">HOT</span>
+              }
+              {{ r.category }}
+              @if (r.updateNote) {
+                <span class="update-note">{{ r.updateNote }}</span>
+              }
+            </div>
+            <div class="card-body">
+              <h3>{{ r.title }}</h3>
+              <div class="meta">
+                <span>{{ r.duration }}</span>
+                <span>{{ formatViews(r.views) }} 次觀看</span>
+              </div>
+            </div>
+          </a>
+        }
+      </div>
+    }
   } @else {
     <p class="empty">載入中…</p>
   }

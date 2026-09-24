@@ -67,6 +67,32 @@
         <p class="empty">目前沒有待審核影片</p>
       }
 
+      <h3 class="sub-title">待審核投稿</h3>
+      @if (pendingPosts().length > 0) {
+        <div class="review-list">
+          @for (p of pendingPosts(); track p.id) {
+            <div class="review-item">
+              <div class="review-head">
+                <strong>
+                  <span class="tag">{{ postTypeLabel(p.type) }}</span> {{ p.title }}
+                </strong>
+                <span class="dim">{{ p.author }} · {{ p.createdAt | date: 'MM/dd HH:mm' }}</span>
+              </div>
+              <p class="dim">
+                {{ p.body || p.originalFilename || '（無內容預覽）' }}
+              </p>
+              <div class="review-actions">
+                <input [(ngModel)]="reviewNote[-p.id]" placeholder="審核備註（選填）" />
+                <button class="btn" (click)="reviewPost(p.id, true)">通過上架</button>
+                <button class="btn ghost" (click)="reviewPost(p.id, false)">退回</button>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="empty">目前沒有待審核投稿</p>
+      }
+
       <h3 class="sub-title">會員帳務管理</h3>
       <table class="tx-table">
         <thead>
@@ -105,14 +131,14 @@
 
       <form (ngSubmit)="submit()">
         <label>帳號</label>
-        <input [(ngModel)]="username" name="username" required placeholder="試用帳號 starfan / 管理員 admin" />
+        <input [(ngModel)]="username" name="username" required placeholder="請輸入帳號" />
         <label>密碼</label>
         <input
           [(ngModel)]="password"
           name="password"
           type="password"
           required
-          placeholder="starfan 密碼 123456 / admin 密碼 admin123"
+          placeholder="請輸入密碼"
         />
         @if (mode === 'register') {
           <label>暱稱</label>

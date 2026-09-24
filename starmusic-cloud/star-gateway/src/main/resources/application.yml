@@ -48,6 +48,10 @@ spring:
               uri: lb://star-search-service
               predicates:
                 - Path=/api/search/**
+            - id: post-service
+              uri: lb://star-post-service
+              predicates:
+                - Path=/api/posts/**
 
 eureka:
   client:

@@ -38,55 +38,130 @@
     </details>
   }
 
-  <div class="tabs">
-    <button [class.active]="activeCategory() === ''" (click)="select('')">全部</button>
+  <div class="tabs channel-nav">
+    <button [class.active]="activeCategory() === ''" (click)="select('')">精選</button>
+    <button class="vip-tab" [class.active]="activeCategory() === 'VIP'" (click)="select('VIP')">VIP</button>
     @for (c of categories(); track c) {
       <button [class.active]="activeCategory() === c" (click)="select(c)">{{ c }}</button>
     }
   </div>
 
-  <div class="layout">
-    <div class="main-col grid">
-      @for (v of videos(); track v.id) {
-        <a class="card" [routerLink]="['/videos', v.id]">
-          <div class="thumb">
-            @if (v.hot) {
-              <span class="badge">HOT</span>
-            }
-            {{ v.category }}
+  @if (activeCategory() === '') {
+    @if (home(); as h) {
+      <div class="hero">
+        @for (v of h.featured; track v.id; let i = $index) {
+          <a class="hero-slide" [class.on]="heroIdx() === i" [routerLink]="['/videos', v.id]">
+            <div class="hero-thumb">
+              <span>{{ v.category }}</span>
+            </div>
+            <div class="hero-info">
+              @if (v.vip) {
+                <span class="vip-badge">VIP 獨播</span>
+              }
+              <h3>{{ v.title }}</h3>
+              <p>{{ v.description }}</p>
+              <div class="hero-meta">
+                @if (v.updateNote) {
+                  <span>{{ v.updateNote }}</span>
+                }
+                <span>{{ formatViews(v.views) }} 次觀看</span>
+              </div>
+            </div>
+          </a>
+        }
+        <button class="hero-nav prev" (click)="nextHero(-1)">‹</button>
+        <button class="hero-nav next" (click)="nextHero(1)">›</button>
+        <div class="hero-dots">
+          @for (v of h.featured; track v.id; let i = $index) {
+            <button [class.on]="heroIdx() === i" (click)="goHero(i)"></button>
+          }
+        </div>
+      </div>
+
+      @for (s of h.sections; track s.category) {
+        <section class="floor">
+          <div class="floor-head">
+            <h3>{{ s.category }}</h3>
+            <button class="more" (click)="select(s.category)">查看更多 ›</button>
           </div>
-          <div class="card-body">
-            <h3>{{ v.title }}</h3>
-            <p>{{ v.description }}</p>
-            <div class="tags">
-              @for (t of v.tags; track t) {
-                <span class="tag">{{ t }}</span>
+          <div class="floor-row">
+            @for (v of s.videos; track v.id) {
+              <a class="card" [routerLink]="['/videos', v.id]">
+                <div class="thumb">
+                  @if (v.vip) {
+                    <span class="badge vip">VIP</span>
+                  } @else if (v.hot) {
+                    <span class="badge">HOT</span>
+                  }
+                  {{ v.category }}
+                  @if (v.updateNote) {
+                    <span class="update-note">{{ v.updateNote }}</span>
+                  }
+                </div>
+                <div class="card-body">
+                  <h3>{{ v.title }}</h3>
+                  <div class="meta">
+                    <span>{{ v.duration }}</span>
+                    <span>{{ formatViews(v.views) }} 次觀看</span>
+                  </div>
+                </div>
+              </a>
+            }
+          </div>
+        </section>
+      }
+    } @else {
+      <p class="empty">載入中…</p>
+    }
+  } @else {
+    <div class="layout">
+      <div class="main-col grid">
+        @for (v of videos(); track v.id) {
+          <a class="card" [routerLink]="['/videos', v.id]">
+            <div class="thumb">
+              @if (v.vip) {
+                <span class="badge vip">VIP</span>
+              } @else if (v.hot) {
+                <span class="badge">HOT</span>
+              }
+              {{ v.category }}
+              @if (v.updateNote) {
+                <span class="update-note">{{ v.updateNote }}</span>
               }
             </div>
-            <div class="meta">
-              <span>{{ v.duration }}</span>
-              <span>{{ formatViews(v.views) }} 次觀看</span>
+            <div class="card-body">
+              <h3>{{ v.title }}</h3>
+              <p>{{ v.description }}</p>
+              <div class="tags">
+                @for (t of v.tags; track t) {
+                  <span class="tag">{{ t }}</span>
+                }
+              </div>
+              <div class="meta">
+                <span>{{ v.duration }}</span>
+                <span>{{ formatViews(v.views) }} 次觀看</span>
+              </div>
             </div>
-          </div>
-        </a>
-      } @empty {
-        <p class="empty">此分類暫無影片</p>
-      }
-    </div>
-
-    <aside class="side-col">
-      <h3>觀看排行</h3>
-      <ol class="rank-list">
-        @for (r of ranking(); track r.id; let i = $index) {
-          <li [routerLink]="['/videos', r.id]">
-            <span class="rank-no" [class.top]="i < 3">{{ i + 1 }}</span>
-            <div>
-              <p class="rank-title">{{ r.title }}</p>
-              <span class="rank-views">{{ formatViews(r.views) }} 次觀看</span>
-            </div>
-          </li>
+          </a>
+        } @empty {
+          <p class="empty">此分類暫無影片</p>
         }
-      </ol>
-    </aside>
-  </div>
+      </div>
+
+      <aside class="side-col">
+        <h3>觀看排行</h3>
+        <ol class="rank-list">
+          @for (r of ranking(); track r.id; let i = $index) {
+            <li [routerLink]="['/videos', r.id]">
+              <span class="rank-no" [class.top]="i < 3">{{ i + 1 }}</span>
+              <div>
+                <p class="rank-title">{{ r.title }}</p>
+                <span class="rank-views">{{ formatViews(r.views) }} 次觀看</span>
+              </div>
+            </li>
+          }
+        </ol>
+      </aside>
+    </div>
+  }
 </div>

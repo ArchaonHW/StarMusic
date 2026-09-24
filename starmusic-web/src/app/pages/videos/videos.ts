@@ -1,10 +1,10 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
-import { Video, VideoUpload } from '../../models';
+import { Video, VideoHome, VideoUpload } from '../../models';
 
 @Component({
   selector: 'app-videos',
@@ -12,14 +12,17 @@ import { Video, VideoUpload } from '../../models';
   templateUrl: './videos.html',
   styleUrl: './videos.scss'
 })
-export class Videos implements OnInit {
+export class Videos implements OnInit, OnDestroy {
   private readonly api = inject(ApiService);
   protected readonly auth = inject(AuthService);
 
+  protected readonly home = signal<VideoHome | null>(null);
   protected readonly videos = signal<Video[]>([]);
   protected readonly categories = signal<string[]>([]);
   protected readonly ranking = signal<Video[]>([]);
   protected readonly activeCategory = signal('');
+  protected readonly heroIdx = signal(0);
+  private heroTimer?: ReturnType<typeof setInterval>;
 
   protected readonly myUploads = signal<VideoUpload[]>([]);
   protected readonly uploading = signal(false);
@@ -32,13 +35,44 @@ export class Videos implements OnInit {
   ngOnInit(): void {
     this.api.videoCategories().subscribe((c) => this.categories.set(c));
     this.api.videoRanking().subscribe((r) => this.ranking.set(r.slice(0, 5)));
-    this.load();
+    this.api.videoHome().subscribe((h) => {
+      this.home.set(h);
+      this.startHero();
+    });
     this.loadMyUploads();
+  }
+
+  ngOnDestroy(): void {
+    clearInterval(this.heroTimer);
   }
 
   select(category: string): void {
     this.activeCategory.set(category);
-    this.load();
+    if (!category) {
+      this.videos.set([]);
+      return;
+    }
+    if (category === 'VIP') {
+      this.api.videos(undefined, true).subscribe((v) => this.videos.set(v));
+      return;
+    }
+    this.api.videos(category).subscribe((v) => this.videos.set(v));
+  }
+
+  nextHero(dir: number): void {
+    const n = this.home()?.featured.length ?? 0;
+    if (n > 1) {
+      this.heroIdx.update((i) => (i + dir + n) % n);
+    }
+  }
+
+  goHero(i: number): void {
+    this.heroIdx.set(i);
+  }
+
+  private startHero(): void {
+    clearInterval(this.heroTimer);
+    this.heroTimer = setInterval(() => this.nextHero(1), 6000);
   }
 
   onFile(event: Event): void {
@@ -77,10 +111,6 @@ export class Videos implements OnInit {
 
   statusLabel(status: string): string {
     return { PENDING: '待審核', APPROVED: '已上架', REJECTED: '已退回' }[status] ?? status;
-  }
-
-  private load(): void {
-    this.api.videos(this.activeCategory() || undefined).subscribe((v) => this.videos.set(v));
   }
 
   private loadMyUploads(): void {

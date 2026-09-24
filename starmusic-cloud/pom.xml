@@ -28,6 +28,7 @@
         <module>star-shop-service</module>
         <module>star-member-service</module>
         <module>star-search-service</module>
+        <module>star-post-service</module>
     </modules>
 
     <properties>

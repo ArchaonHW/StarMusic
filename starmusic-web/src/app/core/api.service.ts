@@ -8,10 +8,12 @@ import {
   Channel,
   Magazine,
   Member,
+  Post,
   Product,
   Program,
   SearchResult,
   Video,
+  VideoHome,
   VideoUpload
 } from '../models';
 
@@ -20,8 +22,10 @@ export class ApiService {
   private readonly http = inject(HttpClient);
   private readonly base = environment.apiBase;
 
-  videos(category?: string): Observable<Video[]> {
-    return this.http.get<Video[]>(`${this.base}/videos`, { params: this.p({ category }) });
+  videos(category?: string, vip?: boolean): Observable<Video[]> {
+    return this.http.get<Video[]>(`${this.base}/videos`, {
+      params: this.p({ category, vip })
+    });
   }
 
   video(id: number): Observable<Video> {
@@ -34,6 +38,10 @@ export class ApiService {
 
   videoRanking(): Observable<Video[]> {
     return this.http.get<Video[]>(`${this.base}/videos/ranking`);
+  }
+
+  videoHome(): Observable<VideoHome> {
+    return this.http.get<VideoHome>(`${this.base}/videos/home`);
   }
 
   channels(): Observable<Channel[]> {
@@ -149,6 +157,45 @@ export class ApiService {
     return this.http.post<AccountTransaction>(
       `${this.base}/members/${memberId}/transactions`,
       req,
+      { headers: this.authHeaders() }
+    );
+  }
+
+  posts(type?: string): Observable<Post[]> {
+    return this.http.get<Post[]>(`${this.base}/posts`, { params: this.p({ type }) });
+  }
+
+  createPost(
+    meta: { type: string; title: string; category?: string; body?: string },
+    file?: File | null
+  ) {
+    const fd = new FormData();
+    fd.append('type', meta.type);
+    fd.append('title', meta.title);
+    if (meta.category) {
+      fd.append('category', meta.category);
+    }
+    if (meta.body) {
+      fd.append('body', meta.body);
+    }
+    if (file) {
+      fd.append('file', file);
+    }
+    return this.http.post<Post>(`${this.base}/posts`, fd, { headers: this.authHeaders() });
+  }
+
+  myPosts(): Observable<Post[]> {
+    return this.http.get<Post[]>(`${this.base}/posts/mine`, { headers: this.authHeaders() });
+  }
+
+  pendingPosts(): Observable<Post[]> {
+    return this.http.get<Post[]>(`${this.base}/posts/pending`, { headers: this.authHeaders() });
+  }
+
+  reviewPost(id: number, approve: boolean, note?: string): Observable<Post> {
+    return this.http.post<Post>(
+      `${this.base}/posts/${id}/${approve ? 'approve' : 'reject'}`,
+      { note },
       { headers: this.authHeaders() }
     );
   }
