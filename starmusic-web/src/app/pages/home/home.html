@@ -167,7 +167,7 @@
           <h3>{{ m.coverStory }}</h3>
           <div class="meta">
             <span>{{ m.publishDate }}</span>
-            <span class="price">NT$ {{ m.price }}</span>
+            <span class="price">{{ m.price > 0 ? 'NT$ ' + m.price : '免費' }}</span>
           </div>
         </div>
       </a>
@@ -178,7 +178,16 @@
   <div class="grid">
     @for (p of products(); track p.id) {
       <a class="card" routerLink="/shop">
-        <div class="thumb">{{ p.category }}</div>
+        <div class="thumb">
+          @if (p.image) {
+            <img class="thumb-img" [src]="p.image" [alt]="p.name" loading="lazy" />
+          } @else {
+            {{ p.category }}
+          }
+          @if (p.price < p.originalPrice) {
+            <span class="badge">SALE</span>
+          }
+        </div>
         <div class="card-body">
           <h3>{{ p.name }}</h3>
           <div class="meta">
