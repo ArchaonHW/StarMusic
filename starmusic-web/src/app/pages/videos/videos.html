@@ -81,7 +81,11 @@
         @for (v of h.featured; track v.id; let i = $index) {
           <a class="hero-slide" [class.on]="heroIdx() === i" [routerLink]="['/videos', v.id]">
             <div class="hero-thumb">
-              <span>{{ v.category }}</span>
+              @if (v.cover) {
+                <img class="cover-img" [src]="v.cover" [alt]="v.title" />
+              } @else {
+                <span>{{ v.category }}</span>
+              }
             </div>
             <div class="hero-info">
               @if (v.vip) {
@@ -117,12 +121,16 @@
             @for (v of s.videos; track v.id) {
               <a class="card" [routerLink]="['/videos', v.id]">
                 <div class="thumb">
+                  @if (v.cover) {
+                    <img class="thumb-img" [src]="v.cover" [alt]="v.title" loading="lazy" />
+                  } @else {
+                    {{ v.category }}
+                  }
                   @if (v.vip) {
                     <span class="badge vip">VIP</span>
                   } @else if (v.hot) {
                     <span class="badge">HOT</span>
                   }
-                  {{ v.category }}
                   @if (v.updateNote) {
                     <span class="update-note">{{ v.updateNote }}</span>
                   }
@@ -148,12 +156,16 @@
         @for (v of videos(); track v.id) {
           <a class="card" [routerLink]="['/videos', v.id]">
             <div class="thumb">
+              @if (v.cover) {
+                <img class="thumb-img" [src]="v.cover" [alt]="v.title" loading="lazy" />
+              } @else {
+                {{ v.category }}
+              }
               @if (v.vip) {
                 <span class="badge vip">VIP</span>
               } @else if (v.hot) {
                 <span class="badge">HOT</span>
               }
-              {{ v.category }}
               @if (v.updateNote) {
                 <span class="update-note">{{ v.updateNote }}</span>
               }

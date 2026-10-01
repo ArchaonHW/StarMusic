@@ -38,6 +38,8 @@
 }
 
 .hero-thumb {
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -45,6 +47,14 @@
   letter-spacing: 6px;
   color: rgba(255, 255, 255, 0.9);
   background: linear-gradient(135deg, #3b2a6d, #7b3fb5 55%, #e83e8c);
+
+  .cover-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
 }
 
 .hero-info {

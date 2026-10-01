@@ -3,8 +3,6 @@ import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { Article, Banner, Channel, Magazine, Product, Video } from '../../models';
-import { environment } from '../../../environments/environment';
-import { demoLocalVideos } from '../../core/demo-store';
 
 interface TvNewsStation {
   id: string;
@@ -71,9 +69,7 @@ export class Home implements OnInit, OnDestroy {
       }
     });
     this.api.videoHome().subscribe((h) => {
-      this.hotVideos.set(
-        environment.staticData ? demoLocalVideos().slice(0, 8) : h.ranking.slice(0, 8)
-      );
+      this.hotVideos.set(h.ranking.slice(0, 8));
     });
     this.api.channels().subscribe((c) => this.channels.set(c.slice(0, 8)));
     this.api.latestMagazines().subscribe((m) => this.latestMagazines.set(m.slice(0, 6)));

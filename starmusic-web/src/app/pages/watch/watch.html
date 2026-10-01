@@ -6,7 +6,16 @@
     </div>
   } @else if (video(); as v) {
     <div class="player-wrap">
-      @if (v.videoUrl) {
+      @if (ytEmbed(v.videoUrl); as src) {
+        <iframe
+          class="player yt-player"
+          [src]="src"
+          [title]="v.title"
+          allow="accelerometer; autoplay; encrypted-media; picture-in-picture"
+          allowfullscreen
+          referrerpolicy="strict-origin-when-cross-origin"
+        ></iframe>
+      } @else if (v.videoUrl) {
         <video class="player" [src]="v.videoUrl" controls autoplay muted playsinline></video>
       } @else {
         <div class="no-source">
@@ -89,12 +98,16 @@
         @for (r of related(); track r.id) {
           <a class="card" [routerLink]="['/videos', r.id]">
             <div class="thumb">
+              @if (r.cover) {
+                <img class="thumb-img" [src]="r.cover" [alt]="r.title" loading="lazy" />
+              } @else {
+                {{ r.category }}
+              }
               @if (r.vip) {
                 <span class="badge vip">VIP</span>
               } @else if (r.hot) {
                 <span class="badge">HOT</span>
               }
-              {{ r.category }}
               @if (r.updateNote) {
                 <span class="update-note">{{ r.updateNote }}</span>
               }

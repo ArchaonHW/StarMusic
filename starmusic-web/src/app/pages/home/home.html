@@ -64,10 +64,14 @@
     @for (v of hotVideos(); track v.id) {
       <a class="card" [routerLink]="['/videos', v.id]">
         <div class="thumb">
+          @if (v.cover) {
+            <img class="thumb-img" [src]="v.cover" [alt]="v.title" loading="lazy" />
+          } @else {
+            {{ v.category }}
+          }
           @if (v.hot) {
             <span class="badge">HOT</span>
           }
-          {{ v.category }}
         </div>
         <div class="card-body">
           <h3>{{ v.title }}</h3>

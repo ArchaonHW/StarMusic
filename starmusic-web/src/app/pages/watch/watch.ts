@@ -2,6 +2,7 @@ import { Component, effect, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { Video, VideoComment } from '../../models';
@@ -14,6 +15,7 @@ import { Video, VideoComment } from '../../models';
 })
 export class Watch {
   private readonly api = inject(ApiService);
+  private readonly sanitizer = inject(DomSanitizer);
   protected readonly auth = inject(AuthService);
 
   readonly id = input.required<string>();
@@ -107,5 +109,16 @@ export class Watch {
 
   formatViews(views: number): string {
     return views >= 10000 ? (views / 10000).toFixed(1) + ' 萬' : String(views);
+  }
+
+  ytEmbed(url: string | null): SafeResourceUrl | null {
+    const id = url?.match(
+      /(?:youtube\.com\/(?:embed\/|watch\?v=|shorts\/)|youtu\.be\/)([\w-]{6,})/
+    )?.[1];
+    return id
+      ? this.sanitizer.bypassSecurityTrustResourceUrl(
+          `https://www.youtube.com/embed/${id}`
+        )
+      : null;
   }
 }

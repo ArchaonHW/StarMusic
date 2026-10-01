@@ -15,6 +15,11 @@
   max-height: 70vh;
 }
 
+.yt-player {
+  aspect-ratio: 16 / 9;
+  border: 0;
+}
+
 .no-source {
   aspect-ratio: 16 / 9;
   display: flex;
