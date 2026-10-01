@@ -20,6 +20,7 @@ import {
 import {
   AccountTransaction,
   Article,
+  Banner,
   Channel,
   Magazine,
   Member,
@@ -99,6 +100,10 @@ export class ApiService {
       );
     }
     return req;
+  }
+
+  banners(): Observable<Banner[]> {
+    return this.http.get<Banner[]>(`${this.base}/banners`);
   }
 
   toggleFavorite(videoId: number): Observable<{ favorited: boolean }> {

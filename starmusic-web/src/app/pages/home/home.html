@@ -1,3 +1,26 @@
+@if (banners().length > 0) {
+  <section class="banner-carousel">
+    <div class="banner-container">
+      @for (banner of banners(); track banner.id; let i = $index) {
+        <a class="banner-slide" [class.active]="bannerIndex() === i" [href]="banner.linkUrl" target="_blank" rel="noopener">
+          <img [src]="banner.imageUrl" [alt]="banner.title">
+          <div class="banner-content">
+            <h3>{{ banner.title }}</h3>
+            @if (banner.description) {
+              <p>{{ banner.description }}</p>
+            }
+          </div>
+        </a>
+      }
+      <div class="banner-dots">
+        @for (banner of banners(); track banner.id; let i = $index) {
+          <button [class.active]="bannerIndex() === i" (click)="goBanner(i)"></button>
+        }
+      </div>
+    </div>
+  </section>
+}
+
 <section class="hero">
   <div class="container hero-inner">
     <div class="hero-text">

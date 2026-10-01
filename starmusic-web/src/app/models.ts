@@ -200,3 +200,11 @@ export interface SearchResult {
   programs: Program[];
   posts: Post[];
 }
+
+export interface Banner {
+  id: number;
+  title: string;
+  imageUrl: string;
+  linkUrl: string;
+  description: string;
+}
