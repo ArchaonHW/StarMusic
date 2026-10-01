@@ -44,9 +44,34 @@
     margin-bottom: -4px;
   }
 
-  input[type='file'] {
+  input[type='file'],
+  .full,
+  .preview {
     grid-column: 1 / -1;
     font-size: 13px;
+  }
+
+  .warn {
+    margin-left: 8px;
+    color: var(--gold);
+  }
+
+  .preview {
+    background: #100d24;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+
+    img,
+    video {
+      max-width: 100%;
+      max-height: 280px;
+      border-radius: 6px;
+    }
+
+    audio {
+      width: 100%;
+    }
   }
 
   .btn {
@@ -62,11 +87,18 @@
   color: var(--gold);
 }
 
+.mine-title {
+  margin: 18px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid #2b2652;
+  font-size: 14px;
+  color: var(--gold);
+}
+
 .my-posts {
   list-style: none;
-  margin: 16px 0 0;
-  padding: 12px 0 0;
-  border-top: 1px solid #2b2652;
+  margin: 8px 0 0;
+  padding: 0;
 
   li {
     display: flex;
@@ -75,6 +107,73 @@
     padding: 6px 0;
     font-size: 13.5px;
     flex-wrap: wrap;
+
+    a {
+      color: inherit;
+
+      &:hover {
+        color: var(--gold);
+      }
+    }
+  }
+
+  .tag {
+    font-size: 11px;
+    color: var(--primary);
+  }
+}
+
+.edit-row {
+  display: grid;
+  grid-template-columns: 1fr 160px;
+  gap: 8px;
+  width: 100%;
+
+  input,
+  textarea {
+    margin: 0;
+  }
+
+  textarea {
+    grid-column: 1 / -1;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #3a3468;
+    background: var(--bg-soft);
+    color: var(--text);
+    font-family: inherit;
+    resize: vertical;
+  }
+
+  .row-actions {
+    grid-column: 1 / -1;
+    margin-left: 0;
+  }
+}
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin: 0 0 18px;
+
+  input {
+    flex: 1;
+    min-width: 200px;
+    margin: 0;
+  }
+
+  select {
+    margin: 0;
+  }
+
+  .btn {
+    padding: 8px 16px;
+  }
+
+  .result-count {
+    margin-left: auto;
   }
 }
 
@@ -179,6 +278,19 @@
 
   audio {
     width: 88%;
+  }
+}
+
+.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 44px;
+  text-decoration: none;
+  background: linear-gradient(135deg, #1d1a3d, #2b1a4d);
+
+  &.ARTICLE {
+    background: linear-gradient(135deg, #14232e, #1d3a4d);
   }
 }
 

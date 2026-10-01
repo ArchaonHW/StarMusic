@@ -1,33 +1,59 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable, defer, delay, map, of, throwError, catchError } from 'rxjs';
+import { Observable, defer, delay, from, map, of, switchMap, throwError, catchError } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
+  demoAddBanner,
+  demoAddMagazine,
+  demoAddNews,
   demoAddPost,
+  demoAddPostComment,
+  demoAddProduct,
   demoAddUpload,
+  demoAllBanners,
   demoAllPosts,
   demoAllUploads,
   demoBanners,
+  demoDeleteBanner,
+  demoDeleteMagazine,
+  demoDeleteNews,
   demoDeletePost,
+  demoDeletePostComment,
+  demoDeleteProduct,
   demoDeleteUpload,
   demoFindPost,
   demoFindVideo,
+  demoLikeCount,
   demoLocalVideos,
+  demoMagazines,
+  demoMembers,
   demoMyPosts,
   demoMyUploads,
+  demoNews,
+  demoPostComments,
+  demoPostLikes,
+  demoProducts,
+  demoToggleLike,
+  demoUpdateBanner,
+  demoUpdateMagazine,
+  demoUpdateNews,
   demoUpdatePost,
+  demoUpdateProduct,
   demoUpdateUpload
 } from './demo-store';
+import { compressImage, isImageFile } from './media';
 import {
   AccountTransaction,
   Article,
   Banner,
+  BannerRequest,
   Channel,
   Magazine,
   Member,
   Page,
   Post,
   PostComment,
+  PostQuery,
   Product,
   Program,
   SearchResult,
@@ -37,6 +63,41 @@ import {
   VideoUpload,
   WatchHistoryItem
 } from '../models';
+
+export type NewsRequest = {
+  title: string;
+  category?: string;
+  summary?: string;
+  content?: string;
+  source?: string;
+  author?: string;
+  imageUrl?: string;
+  imageUrls?: string[];
+  breaking?: boolean;
+};
+
+export type MagazineRequest = {
+  title: string;
+  issueNo?: string;
+  cover?: string;
+  publishDate?: string;
+  price?: number;
+  category?: string;
+  coverStory?: string;
+  highlights?: string[];
+  latest?: boolean;
+};
+
+export type ProductRequest = {
+  name: string;
+  category?: string;
+  price?: number;
+  originalPrice?: number;
+  image?: string;
+  rating?: number;
+  stock?: number;
+  description?: string;
+};
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -105,11 +166,47 @@ export class ApiService {
 
   banners(): Observable<Banner[]> {
     if (environment.staticData) {
-      return of(demoBanners()).pipe(delay(300));
+      return of(demoBanners());
     }
     return this.http.get<Banner[]>(`${this.base}/banners`).pipe(
-      catchError(() => of(demoBanners()).pipe(delay(300)))
+      catchError(() => of(demoBanners()))
     );
+  }
+
+  managedBanners(): Observable<Banner[]> {
+    if (environment.staticData) {
+      return this.demo(demoAllBanners);
+    }
+    return this.http.get<Banner[]>(`${this.base}/banners/manage`, {
+      headers: this.authHeaders()
+    });
+  }
+
+  createBanner(req: BannerRequest): Observable<Banner> {
+    if (environment.staticData) {
+      return this.demo(() => demoAddBanner(req));
+    }
+    return this.http.post<Banner>(`${this.base}/banners/manage`, req, {
+      headers: this.authHeaders()
+    });
+  }
+
+  updateBanner(id: number, req: BannerRequest): Observable<Banner> {
+    if (environment.staticData) {
+      return this.demo(() => this.requireUpdate(demoUpdateBanner(id, req)));
+    }
+    return this.http.put<Banner>(`${this.base}/banners/manage/${id}`, req, {
+      headers: this.authHeaders()
+    });
+  }
+
+  deleteBanner(id: number): Observable<void> {
+    if (environment.staticData) {
+      return this.demo(() => demoDeleteBanner(id));
+    }
+    return this.http.delete<void>(`${this.base}/banners/manage/${id}`, {
+      headers: this.authHeaders()
+    });
   }
 
   toggleFavorite(videoId: number): Observable<{ favorited: boolean }> {
@@ -175,121 +272,166 @@ export class ApiService {
   }
 
   news(category?: string): Observable<Article[]> {
-    return this.http.get<Article[]>(`${this.base}/news`, { params: this.p({ category }) });
+    return this.withLocal(
+      this.http.get<Article[]>(`${this.base}/news`, { params: this.p({ category }) }),
+      () => demoNews().filter((a) => !category || a.category === category)
+    );
   }
 
   article(id: number): Observable<Article> {
-    return this.http.get<Article>(`${this.base}/news/${id}`);
+    const local = environment.staticData ? demoNews().find((a) => a.id === id) : undefined;
+    return local ? of(local) : this.http.get<Article>(`${this.base}/news/${id}`);
   }
 
   breakingNews(): Observable<Article[]> {
-    return this.http.get<Article[]>(`${this.base}/news/breaking`);
+    return this.withLocal(this.http.get<Article[]>(`${this.base}/news/breaking`), () =>
+      demoNews().filter((a) => a.breaking)
+    );
   }
 
   newsCategories(): Observable<string[]> {
-    return this.http.get<string[]>(`${this.base}/news/categories`);
+    return this.withLocalCategories(this.http.get<string[]>(`${this.base}/news/categories`), () =>
+      demoNews().map((a) => a.category)
+    );
   }
 
   managedNews(): Observable<Article[]> {
+    if (environment.staticData) {
+      return this.demo(demoNews);
+    }
     return this.http.get<Article[]>(`${this.base}/news/manage`, {
       headers: this.authHeaders()
     });
   }
 
-  createNews(req: {
-    title: string;
-    category?: string;
-    summary?: string;
-    content?: string;
-    source?: string;
-    author?: string;
-    imageUrl?: string;
-    imageUrls?: string[];
-    breaking?: boolean;
-  }): Observable<Article> {
+  createNews(req: NewsRequest): Observable<Article> {
+    if (environment.staticData) {
+      return this.demo(() => demoAddNews(this.toArticle(req)));
+    }
     return this.http.post<Article>(`${this.base}/news/manage`, req, {
       headers: this.authHeaders()
     });
   }
 
+  updateNews(id: number, req: NewsRequest): Observable<Article> {
+    if (environment.staticData) {
+      return this.demo(() => this.requireUpdate(demoUpdateNews(id, this.toArticle(req))));
+    }
+    return this.http.put<Article>(`${this.base}/news/manage/${id}`, req, {
+      headers: this.authHeaders()
+    });
+  }
+
   deleteNewsItem(id: number): Observable<void> {
+    if (environment.staticData) {
+      return this.demo(() => demoDeleteNews(id));
+    }
     return this.http.delete<void>(`${this.base}/news/manage/${id}`, {
       headers: this.authHeaders()
     });
   }
 
   magazines(category?: string): Observable<Magazine[]> {
-    return this.http.get<Magazine[]>(`${this.base}/magazines`, {
-      params: this.p({ category })
-    });
+    return this.withLocal(
+      this.http.get<Magazine[]>(`${this.base}/magazines`, { params: this.p({ category }) }),
+      () => demoMagazines().filter((m) => !category || m.category === category)
+    );
   }
 
   latestMagazines(): Observable<Magazine[]> {
-    return this.http.get<Magazine[]>(`${this.base}/magazines/latest`);
+    return this.withLocal(this.http.get<Magazine[]>(`${this.base}/magazines/latest`), () =>
+      demoMagazines().filter((m) => m.latest)
+    );
   }
 
   magazineCategories(): Observable<string[]> {
-    return this.http.get<string[]>(`${this.base}/magazines/categories`);
+    return this.withLocalCategories(
+      this.http.get<string[]>(`${this.base}/magazines/categories`),
+      () => demoMagazines().map((m) => m.category)
+    );
   }
 
   managedMagazines(): Observable<Magazine[]> {
+    if (environment.staticData) {
+      return this.demo(demoMagazines);
+    }
     return this.http.get<Magazine[]>(`${this.base}/magazines/manage`, {
       headers: this.authHeaders()
     });
   }
 
-  createMagazine(req: {
-    title: string;
-    issueNo?: string;
-    cover?: string;
-    publishDate?: string;
-    price?: number;
-    category?: string;
-    coverStory?: string;
-    highlights?: string[];
-    latest?: boolean;
-  }): Observable<Magazine> {
+  createMagazine(req: MagazineRequest): Observable<Magazine> {
+    if (environment.staticData) {
+      return this.demo(() => demoAddMagazine(this.toMagazine(req)));
+    }
     return this.http.post<Magazine>(`${this.base}/magazines/manage`, req, {
       headers: this.authHeaders()
     });
   }
 
+  updateMagazine(id: number, req: MagazineRequest): Observable<Magazine> {
+    if (environment.staticData) {
+      return this.demo(() => this.requireUpdate(demoUpdateMagazine(id, this.toMagazine(req))));
+    }
+    return this.http.put<Magazine>(`${this.base}/magazines/manage/${id}`, req, {
+      headers: this.authHeaders()
+    });
+  }
+
   deleteMagazineItem(id: number): Observable<void> {
+    if (environment.staticData) {
+      return this.demo(() => demoDeleteMagazine(id));
+    }
     return this.http.delete<void>(`${this.base}/magazines/manage/${id}`, {
       headers: this.authHeaders()
     });
   }
 
   products(category?: string): Observable<Product[]> {
-    return this.http.get<Product[]>(`${this.base}/products`, { params: this.p({ category }) });
+    return this.withLocal(
+      this.http.get<Product[]>(`${this.base}/products`, { params: this.p({ category }) }),
+      () => demoProducts().filter((p) => !category || p.category === category)
+    );
   }
 
   productCategories(): Observable<string[]> {
-    return this.http.get<string[]>(`${this.base}/products/categories`);
+    return this.withLocalCategories(
+      this.http.get<string[]>(`${this.base}/products/categories`),
+      () => demoProducts().map((p) => p.category)
+    );
   }
 
   managedProducts(): Observable<Product[]> {
+    if (environment.staticData) {
+      return this.demo(demoProducts);
+    }
     return this.http.get<Product[]>(`${this.base}/products/manage`, {
       headers: this.authHeaders()
     });
   }
 
-  createProduct(req: {
-    name: string;
-    category?: string;
-    price?: number;
-    originalPrice?: number;
-    image?: string;
-    rating?: number;
-    stock?: number;
-    description?: string;
-  }): Observable<Product> {
+  createProduct(req: ProductRequest): Observable<Product> {
+    if (environment.staticData) {
+      return this.demo(() => demoAddProduct(this.toProduct(req)));
+    }
     return this.http.post<Product>(`${this.base}/products/manage`, req, {
       headers: this.authHeaders()
     });
   }
 
+  updateProduct(id: number, req: ProductRequest): Observable<Product> {
+    if (environment.staticData) {
+      return this.demo(() => this.requireUpdate(demoUpdateProduct(id, this.toProduct(req))));
+    }
+    return this.http.put<Product>(`${this.base}/products/manage/${id}`, req, {
+      headers: this.authHeaders()
+    });
+  }
+
   deleteProductItem(id: number): Observable<void> {
+    if (environment.staticData) {
+      return this.demo(() => demoDeleteProduct(id));
+    }
     return this.http.delete<void>(`${this.base}/products/manage/${id}`, {
       headers: this.authHeaders()
     });
@@ -414,6 +556,9 @@ export class ApiService {
   }
 
   members(): Observable<Member[]> {
+    if (environment.staticData) {
+      return this.demo(demoMembers);
+    }
     return this.http.get<Member[]>(`${this.base}/members`, { headers: this.authHeaders() });
   }
 
@@ -434,22 +579,54 @@ export class ApiService {
     );
   }
 
-  posts(type?: string, page = 0, size = 12): Observable<Page<Post>> {
-    const req = this.http.get<Page<Post>>(`${this.base}/posts`, {
-      params: this.p({ type, page, size })
-    });
+  posts(query: PostQuery = {}, page = 0, size = 12): Observable<Page<Post>> {
     if (environment.staticData) {
-      return req.pipe(
-        map((p) => {
-          const local = demoAllPosts('APPROVED').filter((x) => !type || x.type === type);
-          if (page !== 0 || local.length === 0) {
-            return p;
-          }
-          return { ...p, content: [...local, ...p.content], totalElements: p.totalElements + local.length };
-        })
+      return this.staticPosts().pipe(
+        map((list) => this.toPage(this.filterPosts(list, query), page, size))
       );
     }
-    return req;
+    return this.http.get<Page<Post>>(`${this.base}/posts`, {
+      params: this.p({ ...query, page, size })
+    });
+  }
+
+  postCategories(): Observable<string[]> {
+    if (environment.staticData) {
+      return this.staticPosts().pipe(
+        map((list) => [...new Set(list.map((p) => p.category).filter(Boolean))].sort())
+      );
+    }
+    return this.http.get<string[]>(`${this.base}/posts/categories`);
+  }
+
+  // 靜態模式：快照中的內建投稿 + 本機投稿，於前端完成篩選、排序與分頁
+  private staticPosts(): Observable<Post[]> {
+    return this.http
+      .get<Page<Post>>(`${this.base}/posts`, { params: this.p({ page: 0, size: 12 }) })
+      .pipe(
+        map((p) => p.content),
+        catchError(() => of([] as Post[])),
+        map((remote) => [
+          ...demoAllPosts('APPROVED'),
+          ...remote
+            .filter((r) => !demoFindPost(r.id))
+            .map((r) => ({ ...r, likeCount: demoLikeCount(r.id) }))
+        ])
+      );
+  }
+
+  private filterPosts(list: Post[], q: PostQuery): Post[] {
+    const kw = q.q?.trim().toLowerCase();
+    const has = (v: string | null | undefined) => !!v && v.toLowerCase().includes(kw!);
+    return list
+      .filter((p) => !q.type || p.type === q.type)
+      .filter((p) => !q.category || p.category === q.category)
+      .filter((p) => !kw || has(p.title) || has(p.author) || has(p.body))
+      .sort((a, b) =>
+        q.sort === 'likes' && b.likeCount !== a.likeCount
+          ? b.likeCount - a.likeCount
+          : b.createdAt.localeCompare(a.createdAt)
+      );
   }
 
   createPost(
@@ -457,7 +634,9 @@ export class ApiService {
     file?: File | null
   ) {
     if (environment.staticData) {
-      return this.demo(() => demoAddPost(meta, file));
+      // 靜態空間無法存檔：圖片壓縮後以 data URL 存在瀏覽器，影音檔僅記錄檔名
+      const media = isImageFile(file) ? compressImage(file) : Promise.resolve(null);
+      return from(media).pipe(switchMap((url) => this.demo(() => demoAddPost(meta, file, url))));
     }
     const fd = new FormData();
     fd.append('type', meta.type);
@@ -510,18 +689,20 @@ export class ApiService {
   }
 
   post(id: number): Observable<Post> {
-    if (environment.staticData) {
-      const local = demoFindPost(id);
-      if (local) {
-        return of(local);
-      }
-    }
-    return this.http.get<Post>(`${this.base}/posts/${id}`, {
+    const req = this.http.get<Post>(`${this.base}/posts/${id}`, {
       headers: this.authHeaders()
     });
+    if (environment.staticData) {
+      const local = demoFindPost(id);
+      return local ? of(local) : req.pipe(map((p) => ({ ...p, likeCount: demoLikeCount(p.id) })));
+    }
+    return req;
   }
 
   postLikes(id: number): Observable<{ likes: number; liked: boolean }> {
+    if (environment.staticData) {
+      return of(demoPostLikes(id));
+    }
     return this.http.get<{ likes: number; liked: boolean }>(
       `${this.base}/posts/${id}/likes`,
       { headers: this.authHeaders() }
@@ -529,6 +710,9 @@ export class ApiService {
   }
 
   likePost(id: number): Observable<{ liked: boolean; likes: number }> {
+    if (environment.staticData) {
+      return this.demo(() => demoToggleLike(id));
+    }
     return this.http.post<{ liked: boolean; likes: number }>(
       `${this.base}/posts/${id}/like`,
       {},
@@ -537,12 +721,24 @@ export class ApiService {
   }
 
   postComments(id: number): Observable<PostComment[]> {
-    return this.http.get<PostComment[]>(`${this.base}/posts/${id}/comments`, {
+    const req = this.http.get<PostComment[]>(`${this.base}/posts/${id}/comments`, {
       headers: this.authHeaders()
     });
+    if (environment.staticData) {
+      return req.pipe(
+        catchError(() => of([] as PostComment[])),
+        map((remote) =>
+          [...demoPostComments(id), ...remote].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+        )
+      );
+    }
+    return req;
   }
 
   addPostComment(id: number, body: string): Observable<PostComment> {
+    if (environment.staticData) {
+      return this.demo(() => demoAddPostComment(id, body));
+    }
     return this.http.post<PostComment>(
       `${this.base}/posts/${id}/comments`,
       { body },
@@ -551,6 +747,9 @@ export class ApiService {
   }
 
   deletePostComment(commentId: number): Observable<void> {
+    if (environment.staticData) {
+      return this.demo(() => demoDeletePostComment(commentId));
+    }
     return this.http.delete<void>(`${this.base}/posts/comments/${commentId}`, {
       headers: this.authHeaders()
     });
@@ -589,10 +788,11 @@ export class ApiService {
 
   resubmitPost(id: number): Observable<Post> {
     if (environment.staticData) {
+      // 靜態模式沒有審核者，重新送出即重新上架
       return this.demo(() => this.requireUpdate(demoUpdatePost(id, {
-        status: 'PENDING',
+        status: 'APPROVED',
         reviewNote: '',
-        reviewedAt: null
+        reviewedAt: new Date().toISOString()
       })));
     }
     return this.http.post<Post>(
@@ -643,7 +843,20 @@ export class ApiService {
     if (!localStorage.getItem('star-member')) {
       return throwError(() => new HttpErrorResponse({ status: 401 }));
     }
-    return defer(() => of(fn())).pipe(delay(300));
+    return defer(() => {
+      try {
+        return of(fn());
+      } catch (e) {
+        return throwError(() =>
+          e instanceof HttpErrorResponse
+            ? e
+            : new HttpErrorResponse({
+                status: 507,
+                error: { message: '瀏覽器儲存空間不足，請改用較小的圖片或刪除舊內容' }
+              })
+        );
+      }
+    }).pipe(delay(300));
   }
 
   private requireUpdate<T>(item: T | undefined): T {
@@ -651,6 +864,65 @@ export class ApiService {
       throw new HttpErrorResponse({ status: 404 });
     }
     return item;
+  }
+
+  // 靜態模式：把後台在本機新增的內容合併到快照資料前面
+  private withLocal<T>(req: Observable<T[]>, local: () => T[]): Observable<T[]> {
+    if (!environment.staticData) {
+      return req;
+    }
+    return req.pipe(
+      catchError(() => of([] as T[])),
+      map((list) => [...local(), ...list])
+    );
+  }
+
+  private withLocalCategories(req: Observable<string[]>, local: () => string[]) {
+    return this.withLocal(req, local).pipe(
+      map((list) => [...new Set(list.filter(Boolean))])
+    );
+  }
+
+  private toArticle(r: NewsRequest): Omit<Article, 'id'> {
+    return {
+      title: r.title,
+      category: r.category ?? '',
+      summary: r.summary ?? '',
+      content: r.content ?? '',
+      source: r.source ?? '',
+      author: r.author ?? '',
+      imageUrl: r.imageUrl ?? '',
+      imageUrls: r.imageUrls ?? [],
+      publishedAt: new Date().toISOString(),
+      breaking: !!r.breaking
+    };
+  }
+
+  private toMagazine(r: MagazineRequest): Omit<Magazine, 'id'> {
+    return {
+      title: r.title,
+      issueNo: r.issueNo ?? '',
+      cover: r.cover ?? '',
+      publishDate: r.publishDate ?? '',
+      price: r.price ?? 0,
+      category: r.category ?? '',
+      coverStory: r.coverStory ?? '',
+      highlights: r.highlights ?? [],
+      latest: !!r.latest
+    };
+  }
+
+  private toProduct(r: ProductRequest): Omit<Product, 'id'> {
+    return {
+      name: r.name,
+      category: r.category ?? '',
+      price: r.price ?? 0,
+      originalPrice: r.originalPrice ?? 0,
+      image: r.image ?? '',
+      rating: r.rating ?? 0,
+      stock: r.stock ?? 0,
+      description: r.description ?? ''
+    };
   }
 
   private toPage<T>(list: T[], page: number, size: number): Page<T> {

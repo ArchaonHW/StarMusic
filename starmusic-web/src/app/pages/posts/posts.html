@@ -3,62 +3,93 @@
 
   @if (auth.member()) {
     <details class="upload-box">
-      <summary>發表新內容（送管理員審核）</summary>
+      <summary>發表新內容{{ staticMode ? '' : '（送管理員審核）' }}</summary>
       <div class="upload-form">
-        <select [(ngModel)]="postType">
+        <select [(ngModel)]="postType" (ngModelChange)="onTypeChange()">
           @for (t of types; track t.value) {
             <option [value]="t.value">{{ t.label }}</option>
           }
         </select>
-        <input [(ngModel)]="postTitle" placeholder="標題（必填）" />
-        <input [(ngModel)]="postCategory" placeholder="分類（選填，如：日常、翻唱、遊戲）" />
+        <input [(ngModel)]="postTitle" placeholder="標題（必填）" maxlength="200" />
+        <input
+          class="full"
+          [(ngModel)]="postCategory"
+          placeholder="分類（選填，如：日常、翻唱、遊戲）"
+          maxlength="50"
+          list="post-categories"
+        />
+        <datalist id="post-categories">
+          @for (c of categories(); track c) {
+            <option [value]="c"></option>
+          }
+        </datalist>
         <textarea
           [(ngModel)]="postBody"
           rows="4"
+          maxlength="10000"
           [placeholder]="postType === 'ARTICLE' ? '文章內文（必填）' : '簡介（選填）'"
         ></textarea>
         <label class="file-label">
           {{ postType === 'ARTICLE' ? '封面圖（選填）' : '檔案（必填）' }}
+          @if (mediaNotSaved()) {
+            <span class="warn">靜態展示版不保存影音檔，只會記錄檔名</span>
+          }
         </label>
         <input type="file" [accept]="acceptFor(postType)" (change)="onFile($event)" />
+        @if (previewUrl(); as url) {
+          <div class="preview">
+            @switch (previewKind()) {
+              @case ('video') {
+                <video [src]="url" controls></video>
+              }
+              @case ('audio') {
+                <audio [src]="url" controls></audio>
+              }
+              @case ('image') {
+                <img [src]="url" alt="預覽" />
+              }
+            }
+          </div>
+        }
         <button class="btn" [disabled]="uploading()" (click)="submit()">
-          {{ uploading() ? '送出中…' : '送出審核' }}
+          {{ uploading() ? '送出中…' : staticMode ? '發佈' : '送出審核' }}
         </button>
         @if (msg()) {
           <p class="upload-msg">{{ msg() }}</p>
         }
       </div>
       @if (myPosts().length > 0) {
+        <h4 class="mine-title">我的投稿</h4>
         <ul class="my-posts">
           @for (p of myPosts(); track p.id) {
             <li>
               @if (editingId === p.id) {
                 <div class="edit-row">
-                  <input [(ngModel)]="editTitle" placeholder="標題" />
-                  <input [(ngModel)]="editCategory" placeholder="分類" />
-                  <input [(ngModel)]="editBody" placeholder="簡介" />
+                  <input [(ngModel)]="editTitle" placeholder="標題" maxlength="200" />
+                  <input [(ngModel)]="editCategory" placeholder="分類" maxlength="50" />
+                  <textarea [(ngModel)]="editBody" rows="3" placeholder="內文 / 簡介"></textarea>
                   <span class="row-actions">
-                    <button class="btn-mini" (click)="saveEdit(p.id)">儲存</button>
+                    <button class="btn-mini" (click)="saveEdit(p)">儲存</button>
                     <button class="btn-mini" (click)="cancelEdit()">取消</button>
                   </span>
                 </div>
               } @else {
                 <span class="st" [class]="'st ' + p.status">{{ statusLabel(p.status) }}</span>
                 <span class="tag">{{ typeLabel(p.type) }}</span>
-                {{ p.title }}
-                <span class="dim">{{ p.createdAt | date: 'MM/dd HH:mm' }}</span>
+                <a [routerLink]="['/posts', p.id]">{{ p.title }}</a>
+                <span class="dim">{{ p.createdAt | date: 'MM/dd HH:mm' }} · ❤ {{ p.likeCount }}</span>
                 @if (p.status === 'REJECTED' && p.reviewNote) {
                   <span class="note">退回原因：{{ p.reviewNote }}</span>
                 }
                 <span class="row-actions">
-                  @if (staticMode) {
-                    <button class="btn-mini" (click)="startEdit(p)">編輯</button>
-                  }
+                  <button class="btn-mini" (click)="startEdit(p)">編輯</button>
                   @if (p.status === 'APPROVED') {
                     <button class="btn-mini" (click)="takedown(p.id)">下架</button>
                   }
                   @if (p.status === 'TAKEN_DOWN' || p.status === 'REJECTED') {
-                    <button class="btn-mini" (click)="resubmit(p.id)">重新送審</button>
+                    <button class="btn-mini" (click)="resubmit(p.id)">
+                      {{ staticMode ? '重新上架' : '重新送審' }}
+                    </button>
                   }
                   <button class="btn-mini danger" (click)="remove(p.id)">刪除</button>
                 </span>
@@ -69,7 +100,7 @@
       }
     </details>
   } @else {
-    <p class="hint">登入會員即可投稿：影片、音訊、圖片、文章皆可，送出後由管理員審核上架。</p>
+    <p class="hint">登入會員即可投稿：影片、音訊、圖片、文章皆可，{{ staticMode ? '送出後立即發佈。' : '送出後由管理員審核上架。' }}</p>
   }
 
   <div class="tabs">
@@ -81,29 +112,49 @@
     }
   </div>
 
+  <div class="filter-bar">
+    <input
+      [(ngModel)]="keyword"
+      (keyup.enter)="applyFilters()"
+      placeholder="搜尋標題、作者或內文"
+    />
+    <select [(ngModel)]="filterCategory" (ngModelChange)="applyFilters()">
+      <option value="">全部分類</option>
+      @for (c of categories(); track c) {
+        <option [value]="c">{{ c }}</option>
+      }
+    </select>
+    <select [(ngModel)]="sort" (ngModelChange)="applyFilters()">
+      <option value="latest">最新發佈</option>
+      <option value="likes">最多按讚</option>
+    </select>
+    <button class="btn" (click)="applyFilters()">搜尋</button>
+    <button class="btn ghost" (click)="resetFilters()">清除</button>
+    <span class="dim result-count">共 {{ total() }} 篇</span>
+  </div>
+
   <div class="grid">
     @for (p of posts(); track p.id) {
       <div class="card post-card">
-        @switch (p.type) {
-          @case ('VIDEO') {
-            <video class="media" [src]="p.mediaUrl" controls preload="metadata"></video>
-          }
-          @case ('AUDIO') {
-            <div class="media audio-box">
-              <span class="audio-icon">🎵</span>
-              <audio [src]="p.mediaUrl" controls preload="metadata"></audio>
-            </div>
-          }
-          @case ('IMAGE') {
-            <img class="media" [src]="p.mediaUrl" [alt]="p.title" loading="lazy" />
-          }
-          @case ('ARTICLE') {
-            @if (p.mediaUrl) {
+        @if (p.mediaUrl) {
+          @switch (p.type) {
+            @case ('VIDEO') {
+              <video class="media" [src]="p.mediaUrl" controls preload="metadata"></video>
+            }
+            @case ('AUDIO') {
+              <div class="media audio-box">
+                <span class="audio-icon">🎵</span>
+                <audio [src]="p.mediaUrl" controls preload="metadata"></audio>
+              </div>
+            }
+            @default {
               <img class="media" [src]="p.mediaUrl" [alt]="p.title" loading="lazy" />
-            } @else {
-              <div class="media article-box">📝</div>
             }
           }
+        } @else {
+          <a [class]="'media placeholder ' + p.type" [routerLink]="['/posts', p.id]">
+            {{ typeIcon(p.type) }}
+          </a>
         }
         <a class="card-body" [routerLink]="['/posts', p.id]">
           <div class="post-meta">
@@ -124,7 +175,7 @@
         </a>
       </div>
     } @empty {
-      <p class="empty">目前沒有這類型的投稿</p>
+      <p class="empty">找不到符合條件的投稿</p>
     }
   </div>
 

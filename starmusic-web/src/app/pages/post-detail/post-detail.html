@@ -17,33 +17,45 @@
       </div>
     </div>
 
-    @switch (p.type) {
-      @case ('VIDEO') {
-        <div class="player-wrap">
-          <video class="player" [src]="p.mediaUrl" controls></video>
-        </div>
-      }
-      @case ('AUDIO') {
-        <div class="audio-wrap">
-          <span class="audio-icon">🎵</span>
-          <audio [src]="p.mediaUrl" controls></audio>
-        </div>
-      }
-      @case ('IMAGE') {
-        <div class="image-wrap">
-          <img [src]="p.mediaUrl" [alt]="p.title" />
-        </div>
-      }
-      @case ('ARTICLE') {
-        @if (p.mediaUrl) {
+    @if (p.mediaUrl) {
+      @switch (p.type) {
+        @case ('VIDEO') {
+          <div class="player-wrap">
+            <video class="player" [src]="p.mediaUrl" controls></video>
+          </div>
+        }
+        @case ('AUDIO') {
+          <div class="audio-wrap">
+            <span class="audio-icon">🎵</span>
+            <audio [src]="p.mediaUrl" controls></audio>
+          </div>
+        }
+        @default {
           <div class="image-wrap">
             <img [src]="p.mediaUrl" [alt]="p.title" />
           </div>
         }
       }
+    } @else if (p.type !== 'ARTICLE') {
+      <p class="no-media">
+        {{ staticMode ? '靜態展示版未保存此影音檔' : '此投稿沒有可播放的檔案' }}
+        @if (p.originalFilename) {
+          （{{ p.originalFilename }}）
+        }
+      </p>
     }
 
-    @if (p.body) {
+    @if (editing()) {
+      <div class="edit-form">
+        <input [(ngModel)]="editTitle" placeholder="標題" maxlength="200" />
+        <input [(ngModel)]="editCategory" placeholder="分類" maxlength="50" />
+        <textarea [(ngModel)]="editBody" rows="6" placeholder="內文 / 簡介"></textarea>
+        <div class="edit-actions">
+          <button class="btn" (click)="saveEdit()">儲存</button>
+          <button class="btn ghost" (click)="editing.set(false)">取消</button>
+        </div>
+      </div>
+    } @else if (p.body) {
       <p class="body-text">{{ p.body }}</p>
     }
     @if (p.status === 'REJECTED' && p.reviewNote) {
@@ -55,11 +67,14 @@
         {{ liked() ? '❤ 已讚' : '♡ 按讚' }}（{{ likeCount() }}）
       </button>
       @if (canManage()) {
+        @if (!editing()) {
+          <button class="btn ghost" (click)="startEdit()">編輯</button>
+        }
         @if (p.status === 'APPROVED') {
           <button class="btn ghost" (click)="takedown()">下架</button>
         }
         @if (p.status === 'TAKEN_DOWN' || p.status === 'REJECTED') {
-          <button class="btn ghost" (click)="resubmit()">重新送審</button>
+          <button class="btn ghost" (click)="resubmit()">{{ staticMode ? '重新上架' : '重新送審' }}</button>
         }
         <button class="btn ghost danger" (click)="remove()">刪除投稿</button>
       }

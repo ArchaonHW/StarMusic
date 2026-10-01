@@ -207,4 +207,15 @@ export interface Banner {
   imageUrl: string;
   linkUrl: string;
   description: string;
+  sortOrder?: number;
+  active?: boolean;
+}
+
+export type BannerRequest = Omit<Banner, 'id'>;
+
+export interface PostQuery {
+  type?: string;
+  q?: string;
+  category?: string;
+  sort?: 'latest' | 'likes';
 }

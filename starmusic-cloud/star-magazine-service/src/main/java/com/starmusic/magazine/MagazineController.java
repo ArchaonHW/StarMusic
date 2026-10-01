@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -110,6 +111,23 @@ public class MagazineController {
     public Magazine create(@RequestBody(required = false) MagazineRequest req,
                            @RequestHeader(value = "X-User-Role", required = false) String role) {
         requireAdmin(role);
+        MagazineEntity e = new MagazineEntity();
+        apply(e, req);
+        return fromEntity(magazines.save(e));
+    }
+
+    @PutMapping("/manage/{id}")
+    public Magazine update(@PathVariable long id,
+                           @RequestBody(required = false) MagazineRequest req,
+                           @RequestHeader(value = "X-User-Role", required = false) String role) {
+        requireAdmin(role);
+        MagazineEntity e = magazines.findById(id - MANAGED_ID_BASE).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "內容不存在或為內建資料"));
+        apply(e, req);
+        return fromEntity(magazines.save(e));
+    }
+
+    private void apply(MagazineEntity e, MagazineRequest req) {
         if (req == null || req.title() == null || req.title().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "標題必填");
         }
@@ -121,7 +139,6 @@ public class MagazineController {
         checkLen(req.category(), MAX_SHORT, "分類");
         checkLen(req.coverStory(), MAX_TEXT, "封面故事");
 
-        MagazineEntity e = new MagazineEntity();
         e.setTitle(req.title().trim());
         e.setIssueNo(req.issueNo());
         e.setCover(req.cover());
@@ -131,7 +148,6 @@ public class MagazineController {
         e.setCoverStory(req.coverStory());
         e.setHighlights(req.highlights() == null ? null : String.join("\n", req.highlights()));
         e.setLatest(Boolean.TRUE.equals(req.latest()));
-        return fromEntity(magazines.save(e));
     }
 
     @DeleteMapping("/manage/{id}")

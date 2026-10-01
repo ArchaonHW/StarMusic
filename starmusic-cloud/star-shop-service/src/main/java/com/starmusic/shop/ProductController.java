@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -103,6 +104,23 @@ public class ProductController {
     public Product create(@RequestBody(required = false) ProductRequest req,
                           @RequestHeader(value = "X-User-Role", required = false) String role) {
         requireAdmin(role);
+        ProductEntity e = new ProductEntity();
+        apply(e, req);
+        return fromEntity(products.save(e));
+    }
+
+    @PutMapping("/manage/{id}")
+    public Product update(@PathVariable long id,
+                          @RequestBody(required = false) ProductRequest req,
+                          @RequestHeader(value = "X-User-Role", required = false) String role) {
+        requireAdmin(role);
+        ProductEntity e = products.findById(id - MANAGED_ID_BASE).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "商品不存在或為內建資料"));
+        apply(e, req);
+        return fromEntity(products.save(e));
+    }
+
+    private void apply(ProductEntity e, ProductRequest req) {
         if (req == null || req.name() == null || req.name().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "商品名稱必填");
         }
@@ -118,7 +136,6 @@ public class ProductController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "庫存不可為負");
         }
 
-        ProductEntity e = new ProductEntity();
         e.setName(req.name().trim());
         e.setCategory(req.category());
         e.setPrice(req.price() == null ? 0 : req.price());
@@ -127,7 +144,6 @@ public class ProductController {
         e.setRating(req.rating() == null ? 0 : req.rating());
         e.setStock(req.stock() == null ? 0 : req.stock());
         e.setDescription(req.description());
-        return fromEntity(products.save(e));
     }
 
     @DeleteMapping("/manage/{id}")

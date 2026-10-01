@@ -1,10 +1,10 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
-import { Post } from '../../models';
+import { Post, PostQuery } from '../../models';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -13,22 +13,30 @@ import { environment } from '../../../environments/environment';
   templateUrl: './posts.html',
   styleUrl: './posts.scss'
 })
-export class PostsPage implements OnInit {
+export class PostsPage implements OnInit, OnDestroy {
   private readonly api = inject(ApiService);
   protected readonly auth = inject(AuthService);
 
   protected readonly posts = signal<Post[]>([]);
   protected readonly myPosts = signal<Post[]>([]);
+  protected readonly categories = signal<string[]>([]);
   protected readonly activeType = signal('');
   protected readonly hasMore = signal(false);
+  protected readonly total = signal(0);
   private page = 0;
   private static readonly PAGE_SIZE = 12;
+
+  protected keyword = '';
+  protected filterCategory = '';
+  protected sort: 'latest' | 'likes' = 'latest';
 
   protected postType: Post['type'] = 'VIDEO';
   protected postTitle = '';
   protected postCategory = '';
   protected postBody = '';
   protected postFile: File | null = null;
+  protected readonly previewUrl = signal<string | null>(null);
+  protected readonly previewKind = signal<'video' | 'audio' | 'image' | null>(null);
   protected readonly uploading = signal(false);
   protected readonly msg = signal('');
   protected readonly staticMode = environment.staticData;
@@ -47,12 +55,29 @@ export class PostsPage implements OnInit {
   ngOnInit(): void {
     this.load();
     this.loadMine();
+    this.loadCategories();
+  }
+
+  ngOnDestroy(): void {
+    this.clearPreview();
   }
 
   select(type: string): void {
     this.activeType.set(type);
+    this.applyFilters();
+  }
+
+  applyFilters(): void {
     this.page = 0;
     this.load();
+  }
+
+  resetFilters(): void {
+    this.keyword = '';
+    this.filterCategory = '';
+    this.sort = 'latest';
+    this.activeType.set('');
+    this.applyFilters();
   }
 
   loadMore(): void {
@@ -64,9 +89,27 @@ export class PostsPage implements OnInit {
     return this.types.find((t) => t.value === type)?.accept ?? '*/*';
   }
 
+  onTypeChange(): void {
+    this.postFile = null;
+    this.clearPreview();
+  }
+
   onFile(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.postFile = input.files?.[0] ?? null;
+    this.clearPreview();
+    if (this.postFile) {
+      const t = this.postFile.type;
+      this.previewKind.set(
+        t.startsWith('video/') ? 'video' : t.startsWith('audio/') ? 'audio' : t.startsWith('image/') ? 'image' : null
+      );
+      this.previewUrl.set(URL.createObjectURL(this.postFile));
+    }
+  }
+
+  // 靜態展示版只能保存圖片（壓縮後存在瀏覽器），影音檔不會保存
+  mediaNotSaved(): boolean {
+    return this.staticMode && (this.postType === 'VIDEO' || this.postType === 'AUDIO');
   }
 
   submit(): void {
@@ -90,7 +133,7 @@ export class PostsPage implements OnInit {
         {
           type: this.postType,
           title,
-          category: this.postCategory || undefined,
+          category: this.postCategory.trim() || undefined,
           body: this.postBody || undefined
         },
         this.postFile
@@ -98,12 +141,15 @@ export class PostsPage implements OnInit {
       .subscribe({
         next: () => {
           this.uploading.set(false);
-          this.msg.set('已送出，等待管理員審核');
+          this.msg.set(this.staticMode ? '投稿成功，已發佈到列表' : '已送出，等待管理員審核');
           this.postTitle = '';
           this.postCategory = '';
           this.postBody = '';
           this.postFile = null;
+          this.clearPreview();
           this.loadMine();
+          this.loadCategories();
+          this.applyFilters();
         },
         error: (e) => {
           this.uploading.set(false);
@@ -114,6 +160,10 @@ export class PostsPage implements OnInit {
 
   typeLabel(type: string): string {
     return this.types.find((t) => t.value === type)?.label ?? type;
+  }
+
+  typeIcon(type: string): string {
+    return { VIDEO: '🎬', AUDIO: '🎵', IMAGE: '🖼', ARTICLE: '📝' }[type] ?? '📄';
   }
 
   statusLabel(status: string): string {
@@ -133,23 +183,24 @@ export class PostsPage implements OnInit {
     this.editingId = null;
   }
 
-  saveEdit(id: number): void {
+  saveEdit(p: Post): void {
     if (!this.editTitle.trim()) {
       this.msg.set('標題不能空白');
       return;
     }
     this.api
-      .updatePost(id, {
+      .updatePost(p.id, {
         title: this.editTitle.trim(),
-        category: this.editCategory || undefined,
+        category: this.editCategory.trim() || undefined,
         body: this.editBody || undefined
       })
       .subscribe({
-        next: () => {
+        next: (r) => {
           this.editingId = null;
-          this.msg.set('已更新');
-          this.loadMine();
-          this.load();
+          this.msg.set(
+            r.status === 'PENDING' && p.status === 'APPROVED' ? '已更新，修改後需重新審核' : '已更新'
+          );
+          this.refreshAll();
         },
         error: (e) => this.msg.set(e.error?.message ?? '更新失敗')
       });
@@ -159,8 +210,7 @@ export class PostsPage implements OnInit {
     this.api.takedownPost(id).subscribe({
       next: () => {
         this.msg.set('已下架');
-        this.loadMine();
-        this.load();
+        this.refreshAll();
       },
       error: (e) => this.msg.set(e.error?.message ?? '下架失敗')
     });
@@ -169,8 +219,8 @@ export class PostsPage implements OnInit {
   resubmit(id: number): void {
     this.api.resubmitPost(id).subscribe({
       next: () => {
-        this.msg.set('已重新送出，等待管理員審核');
-        this.loadMine();
+        this.msg.set(this.staticMode ? '已重新上架' : '已重新送出，等待管理員審核');
+        this.refreshAll();
       },
       error: (e) => this.msg.set(e.error?.message ?? '重新送審失敗')
     });
@@ -183,25 +233,54 @@ export class PostsPage implements OnInit {
     this.api.deletePost(id).subscribe({
       next: () => {
         this.msg.set('已刪除');
-        this.loadMine();
-        this.load();
+        this.refreshAll();
       },
       error: (e) => this.msg.set(e.error?.message ?? '刪除失敗')
     });
   }
 
+  private refreshAll(): void {
+    this.loadMine();
+    this.loadCategories();
+    this.applyFilters();
+  }
+
+  private clearPreview(): void {
+    const url = this.previewUrl();
+    if (url) {
+      URL.revokeObjectURL(url);
+    }
+    this.previewUrl.set(null);
+    this.previewKind.set(null);
+  }
+
+  private query(): PostQuery {
+    return {
+      type: this.activeType() || undefined,
+      q: this.keyword.trim() || undefined,
+      category: this.filterCategory || undefined,
+      sort: this.sort
+    };
+  }
+
   private load(append = false): void {
-    this.api
-      .posts(this.activeType() || undefined, this.page, PostsPage.PAGE_SIZE)
-      .subscribe((p) => {
-        this.posts.update((list) => (append ? [...list, ...p.content] : p.content));
-        this.hasMore.set(p.number + 1 < p.totalPages);
-      });
+    this.api.posts(this.query(), this.page, PostsPage.PAGE_SIZE).subscribe((p) => {
+      this.posts.update((list) => (append ? [...list, ...p.content] : p.content));
+      this.hasMore.set(p.number + 1 < p.totalPages);
+      this.total.set(p.totalElements);
+    });
+  }
+
+  private loadCategories(): void {
+    this.api.postCategories().subscribe({
+      next: (c) => this.categories.set(c),
+      error: () => this.categories.set([])
+    });
   }
 
   private loadMine(): void {
     if (this.auth.member()) {
-      this.api.myPosts().subscribe({
+      this.api.myPosts(0, 50).subscribe({
         next: (p) => this.myPosts.set(p.content),
         error: () => this.myPosts.set([])
       });

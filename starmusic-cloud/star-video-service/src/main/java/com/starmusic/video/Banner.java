@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 
 @Entity
@@ -18,6 +19,8 @@ public class Banner {
     @Column(nullable = false)
     private String title;
 
+    // 可為網址或後台上傳圖片的 data URL，因此使用大型欄位
+    @Lob
     @Column(nullable = false)
     private String imageUrl;
 

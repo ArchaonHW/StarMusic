@@ -24,7 +24,7 @@ spring:
             - id: video-service
               uri: lb://star-video-service
               predicates:
-                - Path=/api/videos/**
+                - Path=/api/videos/**,/api/banners/**
             - id: radio-service
               uri: lb://star-radio-service
               predicates:

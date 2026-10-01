@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,6 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -73,6 +75,9 @@ public class PostController {
     }
 
     public record ReviewRequest(String note) {
+    }
+
+    public record UpdateRequest(String title, String category, String body) {
     }
 
     public record LikeState(long likes, boolean liked) {
@@ -223,28 +228,44 @@ public class PostController {
 
     @GetMapping
     public Page<PostDto> list(@RequestParam(value = "type", required = false) String type,
+                              @RequestParam(value = "q", required = false) String q,
+                              @RequestParam(value = "category", required = false) String category,
+                              @RequestParam(value = "sort", required = false) String sort,
                               @RequestParam(value = "page", defaultValue = "0") int page,
                               @RequestParam(value = "size", defaultValue = "12") int size) {
         Pageable pageable = pageable(page, size);
-        Page<PostEntity> result = type == null || type.isBlank()
-                ? posts.findByStatus(PostEntity.APPROVED, pageable)
-                : posts.findByStatusAndType(
-                        PostEntity.APPROVED, type.toUpperCase(Locale.ROOT), pageable);
-        Page<PostDto> dtos = withLikes(result);
-        if (page != 0) {
-            return dtos;
-        }
-        List<PostDto> builtins = BUILTIN_POSTS.stream()
-                .filter(b -> type == null || type.isBlank()
-                        || b.type().equalsIgnoreCase(type))
-                .map(this::withBuiltinLikes)
+        String t = blank(type) ? null : type.toUpperCase(Locale.ROOT);
+        String kw = blank(q) ? null : q.trim().toLowerCase(Locale.ROOT);
+        String cat = blank(category) ? null : category.trim();
+        Comparator<PostDto> byDate =
+                Comparator.comparing(PostDto::createdAt, Comparator.reverseOrder());
+        Comparator<PostDto> order = "likes".equalsIgnoreCase(sort)
+                ? Comparator.comparingLong(PostDto::likeCount).reversed().thenComparing(byDate)
+                : byDate;
+        List<PostDto> all = Stream.concat(
+                        BUILTIN_POSTS.stream().map(this::withBuiltinLikes),
+                        withLikes(posts.findByStatus(PostEntity.APPROVED)).stream())
+                .filter(p -> t == null || t.equals(p.type()))
+                .filter(p -> cat == null || cat.equals(p.category()))
+                .filter(p -> kw == null || contains(p.title(), kw)
+                        || contains(p.author(), kw) || contains(p.body(), kw))
+                .sorted(order)
                 .toList();
-        if (builtins.isEmpty()) {
-            return dtos;
-        }
-        return new PageImpl<>(
-                Stream.concat(builtins.stream(), dtos.getContent().stream()).toList(),
-                pageable, dtos.getTotalElements() + builtins.size());
+        int from = (int) Math.min(pageable.getOffset(), all.size());
+        int to = Math.min(from + pageable.getPageSize(), all.size());
+        return new PageImpl<>(all.subList(from, to), pageable, all.size());
+    }
+
+    @GetMapping("/categories")
+    public List<String> categories() {
+        return Stream.concat(
+                        BUILTIN_POSTS.stream().map(PostDto::category),
+                        posts.findByStatus(PostEntity.APPROVED).stream()
+                                .map(PostEntity::getCategory))
+                .filter(c -> !blank(c))
+                .distinct()
+                .sorted()
+                .toList();
     }
 
     @GetMapping("/mine")
@@ -345,6 +366,38 @@ public class PostController {
         }
         p.setStatus(PostEntity.TAKEN_DOWN);
         p.setReviewedAt(Instant.now());
+        return PostDto.of(posts.save(p), likes.countByPostId(id));
+    }
+
+    @PutMapping("/{id}")
+    public PostDto update(@PathVariable long id,
+                          @RequestBody(required = false) UpdateRequest req,
+                          @RequestHeader(value = "X-User-Id", required = false) Long userId,
+                          @RequestHeader(value = "X-User-Role", required = false) String role) {
+        requireManaged(id);
+        PostEntity p = findPost(id);
+        requireOwnerOrAdmin(p, userId, role);
+        if (req == null || blank(req.title()) || req.title().length() > MAX_TITLE) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "標題必填且不超過 200 字");
+        }
+        if (req.category() != null && req.category().length() > MAX_CATEGORY) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "分類過長");
+        }
+        if (req.body() != null && req.body().length() > MAX_BODY) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "內文過長");
+        }
+        if ("ARTICLE".equals(p.getType()) && blank(req.body())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "文章內文為必填");
+        }
+        p.setTitle(req.title().trim());
+        p.setCategory(blank(req.category()) ? null : req.category().trim());
+        p.setBody(req.body());
+        // 會員修改已上架內容需重新審核；管理員修改維持原狀態
+        if (!"ADMIN".equals(role) && PostEntity.APPROVED.equals(p.getStatus())) {
+            p.setStatus(PostEntity.PENDING);
+            p.setReviewNote(null);
+            p.setReviewedAt(null);
+        }
         return PostDto.of(posts.save(p), likes.countByPostId(id));
     }
 
@@ -556,6 +609,14 @@ public class PostController {
         return entities.stream()
                 .map(e -> PostDto.of(e, counts.getOrDefault(e.getId(), 0L)))
                 .toList();
+    }
+
+    private static boolean blank(String v) {
+        return v == null || v.isBlank();
+    }
+
+    private static boolean contains(String v, String keyword) {
+        return v != null && v.toLowerCase(Locale.ROOT).contains(keyword);
     }
 
     private static String dec(String v) {

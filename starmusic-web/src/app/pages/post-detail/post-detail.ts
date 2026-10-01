@@ -5,6 +5,7 @@ import { DatePipe } from '@angular/common';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { Post, PostComment } from '../../models';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-post-detail',
@@ -25,6 +26,11 @@ export class PostDetail {
   protected readonly notFound = signal(false);
   protected commentBody = '';
   protected readonly msg = signal('');
+  protected readonly staticMode = environment.staticData;
+  protected readonly editing = signal(false);
+  protected editTitle = '';
+  protected editCategory = '';
+  protected editBody = '';
 
   constructor() {
     effect(() => {
@@ -103,10 +109,46 @@ export class PostDetail {
     return !!m && (m.id === c.memberId || m.role === 'ADMIN');
   }
 
+  // 內建投稿（id >= 900000）由系統維護，不開放編輯
   canManage(): boolean {
     const m = this.auth.member();
     const p = this.post();
-    return !!m && !!p && (m.username === p.author || m.role === 'ADMIN');
+    return !!m && !!p && p.id < 900000 && (m.username === p.author || m.role === 'ADMIN');
+  }
+
+  startEdit(): void {
+    const p = this.post();
+    if (!p) {
+      return;
+    }
+    this.editTitle = p.title;
+    this.editCategory = p.category;
+    this.editBody = p.body;
+    this.editing.set(true);
+  }
+
+  saveEdit(): void {
+    const p = this.post();
+    if (!p || !this.editTitle.trim()) {
+      this.msg.set('標題不能空白');
+      return;
+    }
+    this.api
+      .updatePost(p.id, {
+        title: this.editTitle.trim(),
+        category: this.editCategory.trim() || undefined,
+        body: this.editBody || undefined
+      })
+      .subscribe({
+        next: (r) => {
+          this.post.set({ ...r, likeCount: this.likeCount() });
+          this.editing.set(false);
+          this.msg.set(
+            r.status === 'PENDING' && p.status === 'APPROVED' ? '已更新，修改後需重新審核' : '已更新'
+          );
+        },
+        error: (e) => this.msg.set(e.error?.message ?? '更新失敗')
+      });
   }
 
   takedown(): void {
@@ -128,7 +170,7 @@ export class PostDetail {
     this.api.resubmitPost(p.id).subscribe({
       next: (r) => {
         this.post.set(r);
-        this.msg.set('已重新送出，等待管理員審核');
+        this.msg.set(this.staticMode ? '已重新上架' : '已重新送出，等待管理員審核');
       },
       error: (e) => this.msg.set(e.error?.message ?? '重新送審失敗')
     });

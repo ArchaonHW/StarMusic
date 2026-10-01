@@ -17,9 +17,6 @@ spring:
     hibernate:
       ddl-auto: update
     open-in-view: false
-  sql:
-    init:
-      mode: always
   h2:
     console:
       enabled: false

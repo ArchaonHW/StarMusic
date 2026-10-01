@@ -2,7 +2,7 @@
   <section class="banner-carousel">
     <div class="banner-container">
       @for (banner of banners(); track banner.id; let i = $index) {
-        <a class="banner-slide" [class.active]="bannerIndex() === i" [href]="banner.linkUrl" target="_blank" rel="noopener">
+        <ng-template #slide>
           <img [src]="banner.imageUrl" [alt]="banner.title">
           <div class="banner-content">
             <h3>{{ banner.title }}</h3>
@@ -10,7 +10,16 @@
               <p>{{ banner.description }}</p>
             }
           </div>
-        </a>
+        </ng-template>
+        @if (banner.linkUrl.startsWith('/')) {
+          <a class="banner-slide" [class.active]="bannerIndex() === i" [routerLink]="banner.linkUrl">
+            <ng-container [ngTemplateOutlet]="slide" />
+          </a>
+        } @else {
+          <a class="banner-slide" [class.active]="bannerIndex() === i" [href]="banner.linkUrl" target="_blank" rel="noopener">
+            <ng-container [ngTemplateOutlet]="slide" />
+          </a>
+        }
       }
       <div class="banner-dots">
         @for (banner of banners(); track banner.id; let i = $index) {

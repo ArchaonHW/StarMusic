@@ -1,5 +1,5 @@
 import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { Article, Banner, Channel, Magazine, Product, Video } from '../../models';
@@ -16,7 +16,7 @@ interface TvNewsStation {
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, DatePipe],
+  imports: [RouterLink, DatePipe, NgTemplateOutlet],
   templateUrl: './home.html',
   styleUrl: './home.scss'
 })

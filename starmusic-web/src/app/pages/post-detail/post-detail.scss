@@ -109,6 +109,47 @@
   white-space: pre-wrap;
 }
 
+.no-media {
+  margin-top: 16px;
+  padding: 28px 20px;
+  border-radius: var(--radius);
+  background: #100d24;
+  color: var(--text-dim);
+  text-align: center;
+  font-size: 13px;
+}
+
+.edit-form {
+  display: grid;
+  grid-template-columns: 1fr 200px;
+  gap: 10px;
+  margin: 20px 0;
+
+  input,
+  textarea {
+    margin: 0;
+  }
+
+  textarea {
+    grid-column: 1 / -1;
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid #3a3468;
+    background: var(--bg-soft);
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+  }
+
+  .edit-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 10px;
+  }
+}
+
 .note {
   color: #ff7070;
   font-size: 13px;
