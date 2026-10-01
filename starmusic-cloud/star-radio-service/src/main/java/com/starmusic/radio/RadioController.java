@@ -35,7 +35,9 @@ public class RadioController {
             new Channel(4, "古典音樂台", "FM 97.7", "古典與輕音樂，靜心聆聽", "古典/輕音樂",
                     "http://onair.family977.com.tw:8000/live.mp3", true),
             new Channel(5, "中廣新聞網", "AM 648", "整點新聞，隨時掌握", "新聞/談話",
-                    "https://n03.rcs.revma.com/78fm9wyy2tzuv", true)
+                    "https://n03.rcs.revma.com/78fm9wyy2tzuv", true),
+            new Channel(6, "台中廣播 lucky7", "FM 100.7", "中部五縣市，本土都會流行電台", "本土/都會流行",
+                    "http://211.20.119.101:8081/", true)
     );
 
     private final Map<Long, byte[]> streamCache = new ConcurrentHashMap<>();

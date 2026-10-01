@@ -53,6 +53,13 @@ export class Home implements OnInit, OnDestroy {
       tag: 'SETN',
       slogan: '即時掌握國內外大小事',
       url: 'https://live.setn.com/Channel/2'
+    },
+    {
+      id: 'ebc',
+      name: '東森新聞台',
+      tag: '51 台',
+      slogan: '東森新聞 51 頻道 24 小時線上直播',
+      url: 'https://news.ebc.net.tw/video'
     }
   ];
 
