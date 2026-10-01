@@ -260,6 +260,27 @@
   border-radius: 9px;
 }
 
+.news .thumb {
+  overflow: hidden;
+
+  .thumb-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s;
+  }
+
+  .badge {
+    z-index: 1;
+  }
+}
+
+.news .card:hover .thumb-img {
+  transform: scale(1.05);
+}
+
 .news .card-body p {
   display: -webkit-box;
   -webkit-line-clamp: 2;

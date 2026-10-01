@@ -106,14 +106,18 @@
       @for (a of latestNews(); track a.id) {
         <a class="card" [routerLink]="['/news', a.id]">
           <div class="thumb">
+            @if (a.imageUrl || a.imageUrls?.[0]; as img) {
+              <img class="thumb-img" [src]="img" [alt]="a.title" loading="lazy" />
+            } @else {
+              {{ a.category }}
+            }
             @if (a.breaking) {
               <span class="badge">快訊</span>
             }
-            {{ a.category }}
           </div>
           <div class="card-body">
             <div class="meta">
-              <span class="src">{{ a.source }}</span>
+              <span class="src">星光新聞</span>
               <time>{{ a.publishedAt | date: 'MM/dd HH:mm' }}</time>
             </div>
             <h3>{{ a.title }}</h3>

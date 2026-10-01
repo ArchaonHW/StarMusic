@@ -12,8 +12,8 @@
     @for (a of articles(); track a.id) {
       <a class="news-item" [routerLink]="['/news', a.id]">
         <div class="news-thumb">
-          @if (a.imageUrls.length) {
-            <img [src]="a.imageUrls[0]" [alt]="a.title" />
+          @if (a.imageUrl || a.imageUrls?.[0]; as img) {
+            <img [src]="img" [alt]="a.title" />
           } @else {
             {{ a.category }}
           }

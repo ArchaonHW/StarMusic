@@ -9,7 +9,7 @@
       </div>
       <h1>{{ a.title }}</h1>
       <div class="byline">
-        <span>{{ a.source }} · {{ a.author }}</span>
+        <span>星光新聞{{ a.author ? ' · ' + a.author : '' }}</span>
         <time>{{ a.publishedAt | date: 'yyyy年MM月dd日 HH:mm' }}</time>
       </div>
       @if (a.imageUrls.length) {
