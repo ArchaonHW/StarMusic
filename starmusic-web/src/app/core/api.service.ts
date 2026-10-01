@@ -1,12 +1,13 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable, defer, delay, map, of, throwError } from 'rxjs';
+import { Observable, defer, delay, map, of, throwError, catchError } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
   demoAddPost,
   demoAddUpload,
   demoAllPosts,
   demoAllUploads,
+  demoBanners,
   demoDeletePost,
   demoDeleteUpload,
   demoFindPost,
@@ -103,7 +104,12 @@ export class ApiService {
   }
 
   banners(): Observable<Banner[]> {
-    return this.http.get<Banner[]>(`${this.base}/banners`);
+    if (environment.staticData) {
+      return of(demoBanners()).pipe(delay(300));
+    }
+    return this.http.get<Banner[]>(`${this.base}/banners`).pipe(
+      catchError(() => of(demoBanners()).pipe(delay(300)))
+    );
   }
 
   toggleFavorite(videoId: number): Observable<{ favorited: boolean }> {

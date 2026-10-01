@@ -28,12 +28,9 @@ export class Home implements OnInit, OnDestroy {
   protected readonly channels = signal<Channel[]>([]);
   protected readonly latestMagazines = signal<Magazine[]>([]);
   protected readonly products = signal<Product[]>([]);
-  protected readonly featured = signal<Video[]>([]);
   protected readonly latestNews = signal<Article[]>([]);
   protected readonly banners = signal<Banner[]>([]);
-  protected readonly heroIndex = signal(0);
   protected readonly bannerIndex = signal(0);
-  private heroTimer?: ReturnType<typeof setInterval>;
   private bannerTimer?: ReturnType<typeof setInterval>;
 
   // 外部電視新聞台：連到各台官方直播頁（非本站 API，純靜態版也可用）
@@ -65,6 +62,7 @@ export class Home implements OnInit, OnDestroy {
     this.api.breakingNews().subscribe((a) => this.breaking.set(a));
     this.api.banners().subscribe((b) => {
       this.banners.set(b);
+      this.bannerIndex.set(0); // 確保從第一個開始
       if (b.length > 0) {
         this.bannerTimer = setInterval(
           () => this.bannerIndex.update((i) => (i + 1) % b.length),
@@ -73,13 +71,8 @@ export class Home implements OnInit, OnDestroy {
       }
     });
     this.api.videoHome().subscribe((h) => {
-      this.featured.set(h.featured);
       this.hotVideos.set(
         environment.staticData ? demoLocalVideos().slice(0, 8) : h.ranking.slice(0, 8)
-      );
-      this.heroTimer = setInterval(
-        () => this.heroIndex.update((i) => (i + 1) % Math.max(h.featured.length, 1)),
-        6000
       );
     });
     this.api.channels().subscribe((c) => this.channels.set(c.slice(0, 8)));
@@ -89,12 +82,7 @@ export class Home implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    clearInterval(this.heroTimer);
     clearInterval(this.bannerTimer);
-  }
-
-  goHero(i: number): void {
-    this.heroIndex.set(i);
   }
 
   goBanner(i: number): void {

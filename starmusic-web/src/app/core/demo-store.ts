@@ -1,4 +1,4 @@
-import { Post, Video, VideoUpload } from '../models';
+import { Banner, Post, Video, VideoUpload } from '../models';
 
 // 靜態展示模式：上傳/投稿資料存在訪客瀏覽器 localStorage。
 // 檔案本身不保存（靜態空間無處存檔），僅記錄中繼資料與檔名。
@@ -6,6 +6,42 @@ import { Post, Video, VideoUpload } from '../models';
 const UPLOADS_KEY = 'star-uploads';
 const POSTS_KEY = 'star-posts';
 const VIDEOS_KEY = 'star-videos';
+const BANNERS_KEY = 'star-banners';
+
+// ===== 輪播圖 Banner =====
+
+export function demoBanners(): Banner[] {
+  const stored = read<Banner>(BANNERS_KEY);
+  if (stored.length > 0) {
+    return stored;
+  }
+  // 默認測試數據
+  const defaultBanners: Banner[] = [
+    {
+      id: 1,
+      title: '告五人 Here @ World Tour 2026',
+      imageUrl: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=1200&h=400&fit=crop',
+      linkUrl: '/videos',
+      description: '台北小巨蛋 11/6-11/8 全場完售'
+    },
+    {
+      id: 2,
+      title: 'René 飛行日 巡迴演唱會',
+      imageUrl: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=1200&h=400&fit=crop',
+      linkUrl: '/videos',
+      description: '12/5 台北小巨蛋 FINAL CALL'
+    },
+    {
+      id: 3,
+      title: '鼓鼓呂思緯 我現在又在想你了',
+      imageUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1200&h=400&fit=crop',
+      linkUrl: '/videos',
+      description: '12/26 台北流行音樂中心'
+    }
+  ];
+  write(BANNERS_KEY, defaultBanners);
+  return defaultBanners;
+}
 
 export function currentUsername(): string | null {
   try {
