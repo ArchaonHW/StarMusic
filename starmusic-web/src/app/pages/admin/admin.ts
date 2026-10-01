@@ -414,7 +414,8 @@ export class AdminPage {
       originalPrice: p.originalPrice,
       stock: p.stock,
       image: p.image ?? '',
-      description: p.description ?? ''
+      description: p.description ?? '',
+      buyUrl: p.buyUrl ?? ''
     };
   }
 
@@ -436,7 +437,8 @@ export class AdminPage {
       originalPrice: f.originalPrice ?? undefined,
       stock: f.stock ?? undefined,
       image: f.image || undefined,
-      description: f.description || undefined
+      description: f.description || undefined,
+      buyUrl: f.buyUrl || undefined
     };
     this.run(
       this.editingProdId
@@ -525,7 +527,7 @@ export class AdminPage {
   private emptyProd() {
     return {
       name: '', category: '', price: null as number | null, originalPrice: null as number | null,
-      stock: null as number | null, image: '', description: ''
+      stock: null as number | null, image: '', description: '', buyUrl: ''
     };
   }
 }

@@ -98,6 +98,7 @@ export type ProductRequest = {
   rating?: number;
   stock?: number;
   description?: string;
+  buyUrl?: string;
 };
 
 @Injectable({ providedIn: 'root' })
@@ -923,7 +924,8 @@ export class ApiService {
       image: r.image ?? '',
       rating: r.rating ?? 0,
       stock: r.stock ?? 0,
-      description: r.description ?? ''
+      description: r.description ?? '',
+      buyUrl: r.buyUrl ?? ''
     };
   }
 

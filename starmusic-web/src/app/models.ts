@@ -92,6 +92,7 @@ export interface Product {
   rating: number;
   stock: number;
   description: string;
+  buyUrl?: string;
 }
 
 export interface CartItem {

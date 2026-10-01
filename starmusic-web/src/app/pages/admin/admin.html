@@ -409,6 +409,7 @@
               <input [(ngModel)]="prodForm.originalPrice" type="number" min="0" placeholder="原價" />
               <input [(ngModel)]="prodForm.stock" type="number" min="0" placeholder="庫存" />
               <input [(ngModel)]="prodForm.image" placeholder="圖片 URL" />
+              <input [(ngModel)]="prodForm.buyUrl" placeholder="購買連結（如：蝦皮網址，填了會顯示前往購買）" />
               <textarea [(ngModel)]="prodForm.description" rows="2" placeholder="商品描述"></textarea>
               <div class="form-actions">
                 <button class="btn" (click)="submitProduct()">{{ editingProdId ? '儲存變更' : '新增商品' }}</button>

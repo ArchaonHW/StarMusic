@@ -25,39 +25,48 @@ public class ProductController {
 
     public record Product(long id, String name, String category, double price,
                           double originalPrice, String image, double rating,
-                          int stock, String description) {
+                          int stock, String description, String buyUrl) {
     }
 
+    // 娛樂周邊嚴選：價格為市場參考價，「前往購買」連到蝦皮購物搜尋
     static final List<Product> PRODUCTS = List.of(
-            new Product(1, "《星光之夜》跨年演唱會門票", "演唱會", 3280, 3880,
-                    "/assets/products/concert-ticket.jpg", 4.9, 500,
-                    "2026/12/31 台北小巨蛋，搖滾區站位票。"),
-            new Product(2, "乘風2026 成團紀念專輯", "專輯", 599, 799,
-                    "/assets/products/album-cf2026.jpg", 4.8, 1200,
-                    "七人女團首張同名專輯，附贈寫真卡一套。"),
-            new Product(3, "星光流行網 經典合輯 黑膠版", "專輯", 1299, 1599,
-                    "/assets/products/vinyl.jpg", 4.7, 300,
-                    "電台 20 週年紀念黑膠，收錄 12 首歷年金曲。"),
-            new Product(4, "星光娛樂台 LOGO 帽T", "周邊", 980, 1280,
-                    "/assets/products/hoodie.jpg", 4.6, 800,
-                    "100% 純棉連帽T恤，胸前經典星標刺繡。"),
-            new Product(5, "星光手燈 第三代", "周邊", 450, 550,
-                    "/assets/products/lightstick.jpg", 4.9, 2000,
-                    "演唱會必備應援手燈，支援藍牙連動場控。"),
-            new Product(6, "星光電子雜誌 年度訂閱", "數位", 899, 1188,
-                    "/assets/products/mag-sub.jpg", 4.5, 9999,
-                    "全年 52 期電子雜誌，含十週年數位典藏版。"),
-            new Product(7, "都會星光 DJ 聯名耳機", "周邊", 2490, 2990,
-                    "/assets/products/headphone.jpg", 4.4, 150,
-                    "與都會星光聯名限量耳機，DJ Luna 親自調音。"),
-            new Product(8, "星塵少女 全息投影公仔", "周邊", 1680, 1980,
-                    "/assets/products/figure.jpg", 4.7, 260,
-                    "虛擬偶像星塵少女官方授權全息投影公仔。")
+            new Product(1, "演唱會應援手燈", "演唱會周邊", 399, 599,
+                    "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=600&q=80",
+                    4.8, 0, "演唱會必備應援手燈，多款官方授權與通用款可選（圖為示意，價格為市場參考）。",
+                    "https://shopee.tw/search?keyword=%E6%BC%94%E5%94%B1%E6%9C%83%E6%89%8B%E7%87%88"),
+            new Product(2, "K-POP 偶像專輯", "唱片專輯", 650, 850,
+                    "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=600&q=80",
+                    4.9, 0, "韓團最新專輯、寫真卡版本齊全，蝦皮多家代購比價（圖為示意，價格為市場參考）。",
+                    "https://shopee.tw/search?keyword=KPOP%E5%B0%88%E8%BC%AF"),
+            new Product(3, "黑膠唱片與唱機", "唱片專輯", 1290, 1590,
+                    "https://images.unsplash.com/photo-1483412033650-1015ddeb83d1?w=600&q=80",
+                    4.7, 0, "經典黑膠再版與入門唱機，復古聆聽體驗（圖為示意，價格為市場參考）。",
+                    "https://shopee.tw/search?keyword=%E9%BB%91%E8%86%A0%E5%94%B1%E7%89%87"),
+            new Product(4, "藍牙耳機", "3C影音", 999, 1499,
+                    "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&q=80",
+                    4.6, 0, "通勤追星好夥伴，主動降噪與長續航款式（圖為示意，價格為市場參考）。",
+                    "https://shopee.tw/search?keyword=%E8%97%8D%E7%89%99%E8%80%B3%E6%A9%9F"),
+            new Product(5, "卡拉OK麥克風", "3C影音", 890, 1290,
+                    "https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=600&q=80",
+                    4.5, 0, "在家開唱必備，藍牙連接手機即可歡唱（圖為示意，價格為市場參考）。",
+                    "https://shopee.tw/search?keyword=%E5%8D%A1%E6%8B%89OK%E9%BA%A5%E5%85%8B%E9%A2%A8"),
+            new Product(6, "藍牙音響", "3C影音", 1490, 1990,
+                    "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=600&q=80",
+                    4.4, 0, "派對與居家聆聽適用，重低音款式齊全（圖為示意，價格為市場參考）。",
+                    "https://shopee.tw/search?keyword=%E8%97%8D%E7%89%99%E5%96%87%E5%8F%AD"),
+            new Product(7, "演唱會應援帽T", "演唱會周邊", 780, 980,
+                    "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=600&q=80",
+                    4.6, 0, "偶像巡演周邊帽T與應援服飾，各團官方與同人款（圖為示意，價格為市場參考）。",
+                    "https://shopee.tw/search?keyword=%E6%87%89%E6%8F%B4%E5%B8%BDT"),
+            new Product(8, "偶像公仔與收藏模型", "收藏周邊", 580, 780,
+                    "https://images.unsplash.com/photo-1608889175123-8ee362201f81?w=600&q=80",
+                    4.7, 0, "Q版公仔、景品與官方收藏模型（圖為示意，價格為市場參考）。",
+                    "https://shopee.tw/search?keyword=%E5%81%B6%E5%83%8F%E5%85%AC%E4%BB%94")
     );
 
     public record ProductRequest(String name, String category, Double price,
                                  Double originalPrice, String image, Double rating,
-                                 Integer stock, String description) {
+                                 Integer stock, String description, String buyUrl) {
     }
 
     private static final long MANAGED_ID_BASE = 10000;
@@ -144,6 +153,7 @@ public class ProductController {
         e.setRating(req.rating() == null ? 0 : req.rating());
         e.setStock(req.stock() == null ? 0 : req.stock());
         e.setDescription(req.description());
+        e.setBuyUrl(req.buyUrl());
     }
 
     @DeleteMapping("/manage/{id}")
@@ -172,7 +182,7 @@ public class ProductController {
     private Product fromEntity(ProductEntity e) {
         return new Product(MANAGED_ID_BASE + e.getId(), e.getName(), e.getCategory(),
                 e.getPrice(), e.getOriginalPrice(), e.getImage(), e.getRating(),
-                e.getStock(), e.getDescription());
+                e.getStock(), e.getDescription(), e.getBuyUrl());
     }
 
     private void requireAdmin(String role) {

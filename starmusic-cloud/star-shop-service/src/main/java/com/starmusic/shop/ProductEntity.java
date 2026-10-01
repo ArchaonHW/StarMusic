@@ -34,6 +34,8 @@ public class ProductEntity {
     @Lob
     private String description;
 
+    private String buyUrl;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getName() { return name; }
@@ -52,4 +54,6 @@ public class ProductEntity {
     public void setStock(int stock) { this.stock = stock; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+    public String getBuyUrl() { return buyUrl; }
+    public void setBuyUrl(String buyUrl) { this.buyUrl = buyUrl; }
 }

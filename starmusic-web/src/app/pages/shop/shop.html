@@ -12,10 +12,14 @@
     @for (p of products(); track p.id) {
       <div class="card product">
         <div class="thumb">
+          @if (p.image) {
+            <img class="thumb-img" [src]="p.image" [alt]="p.name" loading="lazy" />
+          } @else {
+            {{ p.category }}
+          }
           @if (p.price < p.originalPrice) {
             <span class="badge">SALE</span>
           }
-          {{ p.category }}
         </div>
         <div class="card-body">
           <h3>{{ p.name }}</h3>
@@ -25,10 +29,15 @@
             <span>★ {{ p.rating }}</span>
           </div>
           <div class="card-foot">
-            <span class="stock">庫存 {{ p.stock }}</span>
-            <button class="btn" (click)="addToCart(p)">
-              {{ addedId() === p.id ? '✓ 已加入' : '加入購物車' }}
-            </button>
+            @if (p.buyUrl) {
+              <span class="stock">蝦皮購物</span>
+              <a class="btn" [href]="p.buyUrl" target="_blank" rel="noopener">前往購買</a>
+            } @else {
+              <span class="stock">庫存 {{ p.stock }}</span>
+              <button class="btn" (click)="addToCart(p)">
+                {{ addedId() === p.id ? '✓ 已加入' : '加入購物車' }}
+              </button>
+            }
           </div>
         </div>
       </div>
