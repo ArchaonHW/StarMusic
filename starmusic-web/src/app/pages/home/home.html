@@ -156,8 +156,12 @@
     @for (m of latestMagazines(); track m.id) {
       <a class="card" routerLink="/magazines">
         <div class="thumb book">
+          @if (m.cover) {
+            <img class="thumb-img" [src]="m.cover" [alt]="m.title" loading="lazy" />
+          } @else {
+            {{ m.title }}
+          }
           <span class="badge">{{ m.issueNo }}</span>
-          {{ m.title }}
         </div>
         <div class="card-body">
           <h3>{{ m.coverStory }}</h3>
