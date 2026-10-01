@@ -36,6 +36,8 @@ public class MagazineEntity {
 
     private boolean latest;
 
+    private String readUrl;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getTitle() { return title; }
@@ -56,4 +58,6 @@ public class MagazineEntity {
     public void setHighlights(String highlights) { this.highlights = highlights; }
     public boolean isLatest() { return latest; }
     public void setLatest(boolean latest) { this.latest = latest; }
+    public String getReadUrl() { return readUrl; }
+    public void setReadUrl(String readUrl) { this.readUrl = readUrl; }
 }

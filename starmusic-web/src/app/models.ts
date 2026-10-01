@@ -79,6 +79,7 @@ export interface Magazine {
   coverStory: string;
   highlights: string[];
   latest: boolean;
+  readUrl?: string;
 }
 
 export interface Product {

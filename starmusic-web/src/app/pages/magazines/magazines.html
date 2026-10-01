@@ -12,14 +12,18 @@
     @for (m of magazines(); track m.id) {
       <div class="card" (click)="open(m)">
         <div class="thumb book">
+          @if (m.cover) {
+            <img class="thumb-img" [src]="m.cover" [alt]="m.title" loading="lazy" />
+          } @else {
+            {{ m.title }}
+          }
           <span class="badge">{{ m.issueNo }}</span>
-          {{ m.title }}
         </div>
         <div class="card-body">
           <h3>{{ m.coverStory }}</h3>
           <div class="meta">
             <span>{{ m.publishDate }}</span>
-            <span class="price">NT$ {{ m.price }}</span>
+            <span class="price">{{ m.price > 0 ? 'NT$ ' + m.price : '免費' }}</span>
           </div>
         </div>
       </div>
@@ -31,8 +35,12 @@
   <div class="overlay" (click)="close()">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-cover">
+        @if (m.cover) {
+          <img class="cover-img" [src]="m.cover" [alt]="m.title" />
+        } @else {
+          <h3>{{ m.title }}</h3>
+        }
         <span class="badge">{{ m.issueNo }}</span>
-        <h3>{{ m.title }}</h3>
       </div>
       <div class="modal-body">
         <p class="cover-story">{{ m.coverStory }}</p>
@@ -42,9 +50,13 @@
           }
         </ul>
         <div class="modal-foot">
-          <span class="price">NT$ {{ m.price }}</span>
+          <span class="price">{{ m.price > 0 ? 'NT$ ' + m.price : '免費' }}</span>
           <div>
-            <button class="btn">訂閱閱讀</button>
+            @if (m.readUrl) {
+              <a class="btn" [href]="m.readUrl" target="_blank" rel="noopener">線上閱讀</a>
+            } @else {
+              <button class="btn">訂閱閱讀</button>
+            }
             <button class="btn ghost" (click)="close()">關閉</button>
           </div>
         </div>

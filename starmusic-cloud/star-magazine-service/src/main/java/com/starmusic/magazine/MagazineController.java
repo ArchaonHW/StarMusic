@@ -24,40 +24,57 @@ public class MagazineController {
 
     public record Magazine(long id, String title, String issueNo, String cover,
                            String publishDate, double price, String category,
-                           String coverStory, List<String> highlights, boolean latest) {
+                           String coverStory, List<String> highlights, boolean latest,
+                           String readUrl) {
     }
 
+    // 免費線上雜誌：台北畫刊（北市府觀傳局）、台灣光華雜誌、PAR表演藝術、新活水
     private static final List<Magazine> MAGAZINES = List.of(
-            new Magazine(1, "星光娛樂週刊", "NO.521", "/assets/magazines/weekly-521.jpg",
-                    "2026-09-22", 99, "娛樂",
-                    "封面故事：乘風2026 成團之夜全紀錄",
-                    List.of("獨家專訪成團七人", "演唱會幕後直擊", "秋季穿搭特輯"), true),
-            new Magazine(2, "星光娛樂週刊", "NO.520", "/assets/magazines/weekly-520.jpg",
-                    "2026-09-15", 99, "娛樂",
-                    "封面故事：長街長完結篇深度解析",
-                    List.of("導演獨家訪談", "權謀劇十大盘點", "古裝造型大賞"), false),
-            new Magazine(3, "時尚星光", "2026 秋季號", "/assets/magazines/fashion-autumn.jpg",
-                    "2026-09-01", 149, "時尚",
-                    "封面故事：星光妝容的誕生",
-                    List.of("秋冬時裝週前線", "香檳金妝容教學", "名模衣櫥公開"), true),
-            new Magazine(4, "音樂先鋒", "VOL.88", "/assets/magazines/music-88.jpg",
-                    "2026-09-10", 79, "音樂",
-                    "封面故事：AI 歌手會取代真人嗎？",
-                    List.of("虛擬偶像產業報告", "華語樂壇新聲代", "錄音室探秘"), true),
-            new Magazine(5, "音樂先鋒", "VOL.87", "/assets/magazines/music-87.jpg",
-                    "2026-08-10", 79, "音樂",
-                    "封面故事：亞洲電台大賞完全特輯",
-                    List.of("年度最佳電台專訪", "廣播的黃金年代", "DJ 的一天"), false),
-            new Magazine(6, "星光電影誌", "NO.45", "/assets/magazines/movie-45.jpg",
-                    "2026-09-05", 129, "電影",
-                    "封面故事：星際遠航特效製作全揭秘",
-                    List.of("視效總監訪談", "科幻片百年回顧", "金獎片單預測"), true)
+            new Magazine(1, "台北畫刊", "第687期", "",
+                    "2026-07-17", 0, "城市",
+                    "台北河・夜太美",
+                    List.of("當河岸點亮城市的另一種風景", "大稻埕的人間煙火氣｜河岸遊憩",
+                            "彩虹橋畔的浪漫夜色｜河岸食光", "來去環南市場：從消夜吃到早餐",
+                            "亞洲戲偶權威 Robin Ruizendaal 的偶戲人生", "臺北親水節 High 翻城市水樂園"),
+                    true, "https://www.travel.taipei/zh-tw/pictorial/period/376"),
+            new Magazine(2, "台北畫刊", "第686期", "",
+                    "2026-05-05", 0, "城市",
+                    "翻讀漫畫：探索書頁裡的台北",
+                    List.of("台灣漫畫發展脈絡與台北的漫畫沃土", "漫畫場景拾影：大稻埕、西門町的時空旅行",
+                            "漫畫空間巡禮：通往想像的文化路徑", "白鹿洞書坊與懷舊租書店文化"),
+                    true, "https://news.travel.taipei/ebook/686/"),
+            new Magazine(3, "台灣光華雜誌 Taiwan Panorama", "2026年10月號", "",
+                    "2026-10", 0, "綜合",
+                    "台灣面向世界的雙語月刊",
+                    List.of("百年文藝群星登陸東京：《共時的星叢》於東京都現代美術館開展",
+                            "在北投遇見日本妖怪：一場台日的文化轉譯",
+                            "台中綠美圖的空間實驗：普利茲克獎團隊 SANAA 打造",
+                            "全台灣最瘋狂排球賽：彰化二林「ㄓ豆大叔盃水田排球賽」"),
+                    true, "https://www.taiwan-panorama.com/zh-tw/Periodical/Details?Guid=a1675a11-7979-42cd-b095-d303f2ce704c"),
+            new Magazine(4, "PAR表演藝術", "最新刊", "https://par.npac-ntch.org/rsrc/latestMag.png",
+                    "持續更新", 0, "表演藝術",
+                    "國家表演藝術中心官方雜誌",
+                    List.of("音樂・舞蹈・戲劇・戲曲專題與評論", "藝術家與製作團隊深度專訪",
+                            "兩廳院、衛武營、台中歌劇院演出情報"),
+                    true, "https://par.npac-ntch.org/"),
+            new Magazine(5, "新活水 FOUNTAIN", "線上版", "",
+                    "持續更新", 0, "文化",
+                    "中華文化總會發行的文化雜誌",
+                    List.of("台灣當代文化深度專題報導", "人物專訪與生活美學", "文創、藝術與設計議題"),
+                    true, "https://www.fountain.org.tw/"),
+            new Magazine(6, "台北畫刊", "第675期", "",
+                    "2024-07-08", 0, "城市",
+                    "我城焦點：台北百年摩登",
+                    List.of("建城140週年：看向未來的文化首都", "尋找歷史座標，開啟時代的建築之最",
+                            "看見摩登時尚：多元交織的服裝風華", "漫遊花火下的大稻埕",
+                            "走訪天下第一攤", "百年流轉的城市光影"),
+                    false, "https://news.travel.taipei/ebook/675/")
     );
 
     public record MagazineRequest(String title, String issueNo, String cover,
                                   String publishDate, Double price, String category,
                                   String coverStory, List<String> highlights,
-                                  Boolean latest) {
+                                  Boolean latest, String readUrl) {
     }
 
     private static final long MANAGED_ID_BASE = 10000;
@@ -148,6 +165,7 @@ public class MagazineController {
         e.setCoverStory(req.coverStory());
         e.setHighlights(req.highlights() == null ? null : String.join("\n", req.highlights()));
         e.setLatest(Boolean.TRUE.equals(req.latest()));
+        e.setReadUrl(req.readUrl());
     }
 
     @DeleteMapping("/manage/{id}")
@@ -175,7 +193,7 @@ public class MagazineController {
                 : List.of(e.getHighlights().split("\\R"));
         return new Magazine(MANAGED_ID_BASE + e.getId(), e.getTitle(), e.getIssueNo(),
                 e.getCover(), e.getPublishDate(), e.getPrice(), e.getCategory(),
-                e.getCoverStory(), highlights, e.isLatest());
+                e.getCoverStory(), highlights, e.isLatest(), e.getReadUrl());
     }
 
     private void requireAdmin(String role) {

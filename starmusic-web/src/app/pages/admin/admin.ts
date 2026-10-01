@@ -356,7 +356,8 @@ export class AdminPage {
       cover: m.cover ?? '',
       coverStory: m.coverStory ?? '',
       highlights: (m.highlights ?? []).join('\n'),
-      latest: m.latest
+      latest: m.latest,
+      readUrl: m.readUrl ?? ''
     };
   }
 
@@ -384,7 +385,8 @@ export class AdminPage {
       cover: f.cover || undefined,
       coverStory: f.coverStory || undefined,
       highlights: highlights.length ? highlights : undefined,
-      latest: f.latest
+      latest: f.latest,
+      readUrl: f.readUrl || undefined
     };
     this.run(
       this.editingMagId
@@ -516,7 +518,7 @@ export class AdminPage {
   private emptyMag() {
     return {
       title: '', issueNo: '', category: '', publishDate: '', price: null as number | null,
-      cover: '', coverStory: '', highlights: '', latest: false
+      cover: '', coverStory: '', highlights: '', latest: false, readUrl: ''
     };
   }
 

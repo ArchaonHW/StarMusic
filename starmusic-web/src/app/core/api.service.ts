@@ -86,6 +86,7 @@ export type MagazineRequest = {
   coverStory?: string;
   highlights?: string[];
   latest?: boolean;
+  readUrl?: string;
 };
 
 export type ProductRequest = {
@@ -908,7 +909,8 @@ export class ApiService {
       category: r.category ?? '',
       coverStory: r.coverStory ?? '',
       highlights: r.highlights ?? [],
-      latest: !!r.latest
+      latest: !!r.latest,
+      readUrl: r.readUrl ?? ''
     };
   }
 
