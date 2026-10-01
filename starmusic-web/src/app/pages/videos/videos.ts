@@ -5,6 +5,7 @@ import { DatePipe } from '@angular/common';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { Video, VideoHome, VideoUpload } from '../../models';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-videos',
@@ -24,7 +25,12 @@ export class Videos implements OnInit, OnDestroy {
   protected readonly heroIdx = signal(0);
   private heroTimer?: ReturnType<typeof setInterval>;
 
+  protected readonly staticMode = environment.staticData;
   protected readonly myUploads = signal<VideoUpload[]>([]);
+  protected editingId: number | null = null;
+  protected editTitle = '';
+  protected editCategory = '';
+  protected editDesc = '';
   protected readonly uploading = signal(false);
   protected readonly uploadMsg = signal('');
   protected uploadTitle = '';
@@ -96,7 +102,9 @@ export class Videos implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.uploading.set(false);
-          this.uploadMsg.set('上傳成功，等待管理員審核');
+          this.uploadMsg.set(
+            environment.staticData ? '上傳成功，已發佈到首頁精選' : '上傳成功，等待管理員審核'
+          );
           this.uploadTitle = '';
           this.uploadDesc = '';
           this.uploadFile = null;
@@ -113,6 +121,38 @@ export class Videos implements OnInit, OnDestroy {
     return { PENDING: '待審核', APPROVED: '已上架', REJECTED: '已退回', TAKEN_DOWN: '已下架' }[
       status
     ] ?? status;
+  }
+
+  startEdit(u: VideoUpload): void {
+    this.editingId = u.id;
+    this.editTitle = u.title;
+    this.editCategory = u.category;
+    this.editDesc = u.description;
+  }
+
+  cancelEdit(): void {
+    this.editingId = null;
+  }
+
+  saveEdit(id: number): void {
+    if (!this.editTitle.trim()) {
+      this.uploadMsg.set('標題不能空白');
+      return;
+    }
+    this.api
+      .updateUpload(id, {
+        title: this.editTitle.trim(),
+        category: this.editCategory || undefined,
+        description: this.editDesc || undefined
+      })
+      .subscribe({
+        next: () => {
+          this.editingId = null;
+          this.uploadMsg.set('已更新');
+          this.loadMyUploads();
+        },
+        error: (e) => this.uploadMsg.set(e.error?.message ?? '更新失敗')
+      });
   }
 
   takedown(id: number): void {

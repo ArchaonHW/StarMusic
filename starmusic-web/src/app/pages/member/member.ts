@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { ApiService } from '../../core/api.service';
 import { AccountTransaction, Video, WatchHistoryItem } from '../../models';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-member',
@@ -21,6 +22,7 @@ export class MemberPage {
   protected password = '';
   protected nickname = '';
   protected email = '';
+  protected readonly staticMode = environment.staticData;
   protected readonly error = signal('');
   protected readonly message = signal('');
 
@@ -42,6 +44,7 @@ export class MemberPage {
   }
 
   private errMsg(e: { status?: number }, fallback: string): string {
+    if (e?.status === 501) return '靜態展示版不開放此功能（需連接後端主機）';
     if (e?.status === 429) return '嘗試次數過多，請稍後再試';
     if (e?.status === 401) return '帳號或密碼錯誤';
     if (e?.status === 403) return '沒有權限';
@@ -58,7 +61,7 @@ export class MemberPage {
         error: (e) => this.error.set(this.errMsg(e, '登入失敗'))
       });
     } else {
-      this.api
+      this.auth
         .register({
           username: this.username,
           password: this.password,
@@ -80,11 +83,24 @@ export class MemberPage {
     this.message.set('已登出');
   }
 
+  resetDemo(): void {
+    ['star-users', 'star-uploads', 'star-posts', 'star-tx'].forEach((k) =>
+      localStorage.removeItem(k)
+    );
+    this.auth.logout();
+    this.error.set('');
+    this.message.set('已重置展示資料，可使用預設帳號登入');
+  }
+
   typeLabel(type: string): string {
     return { TOPUP: '儲值', CONSUME: '消費', REFUND: '退款', ADJUST: '調整' }[type] ?? type;
   }
 
   private loadTransactions(memberId: number): void {
+    if (environment.staticData) {
+      this.transactions.set(this.auth.demoTransactions(memberId));
+      return;
+    }
     this.api.transactions(memberId).subscribe({
       next: (t) => this.transactions.set(t),
       error: () => this.transactions.set([])
@@ -92,6 +108,9 @@ export class MemberPage {
   }
 
   private loadLibrary(): void {
+    if (environment.staticData) {
+      return;
+    }
     this.api.myFavorites().subscribe({
       next: (v) => this.myFavorites.set(v),
       error: () => this.myFavorites.set([])

@@ -1,7 +1,22 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
+import { Observable, defer, delay, map, of, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
+import {
+  demoAddPost,
+  demoAddUpload,
+  demoAllPosts,
+  demoAllUploads,
+  demoDeletePost,
+  demoDeleteUpload,
+  demoFindPost,
+  demoFindVideo,
+  demoLocalVideos,
+  demoMyPosts,
+  demoMyUploads,
+  demoUpdatePost,
+  demoUpdateUpload
+} from './demo-store';
 import {
   AccountTransaction,
   Article,
@@ -27,12 +42,29 @@ export class ApiService {
   private readonly base = environment.apiBase;
 
   videos(category?: string, vip?: boolean): Observable<Video[]> {
-    return this.http.get<Video[]>(`${this.base}/videos`, {
+    const req = this.http.get<Video[]>(`${this.base}/videos`, {
       params: this.p({ category, vip })
     });
+    if (environment.staticData) {
+      return req.pipe(
+        map((list) => [
+          ...demoLocalVideos().filter(
+            (v) => (!category || v.category === category) && (vip !== true || v.vip)
+          ),
+          ...list
+        ])
+      );
+    }
+    return req;
   }
 
   video(id: number): Observable<Video> {
+    if (environment.staticData) {
+      const local = demoFindVideo(id);
+      if (local) {
+        return of(local);
+      }
+    }
     return this.http.get<Video>(`${this.base}/videos/${id}`);
   }
 
@@ -41,11 +73,32 @@ export class ApiService {
   }
 
   videoRanking(): Observable<Video[]> {
-    return this.http.get<Video[]>(`${this.base}/videos/ranking`);
+    const req = this.http.get<Video[]>(`${this.base}/videos/ranking`);
+    if (environment.staticData) {
+      return req.pipe(map((list) => [...demoLocalVideos(), ...list]));
+    }
+    return req;
   }
 
   videoHome(): Observable<VideoHome> {
-    return this.http.get<VideoHome>(`${this.base}/videos/home`);
+    const req = this.http.get<VideoHome>(`${this.base}/videos/home`);
+    if (environment.staticData) {
+      return req.pipe(
+        map((h) => {
+          const locals = demoLocalVideos();
+          return {
+            ...h,
+            featured: [...locals, ...h.featured],
+            ranking: [...locals, ...h.ranking],
+            sections: h.sections.map((s) => ({
+              ...s,
+              videos: [...locals.filter((v) => v.category === s.category), ...s.videos]
+            }))
+          };
+        })
+      );
+    }
+    return req;
   }
 
   toggleFavorite(videoId: number): Observable<{ favorited: boolean }> {
@@ -236,6 +289,9 @@ export class ApiService {
   }
 
   uploadVideo(file: File, meta: { title: string; category?: string; description?: string }) {
+    if (environment.staticData) {
+      return this.demo(() => demoAddUpload(file, meta));
+    }
     const fd = new FormData();
     fd.append('file', file);
     fd.append('title', meta.title);
@@ -251,12 +307,18 @@ export class ApiService {
   }
 
   myUploads(): Observable<VideoUpload[]> {
+    if (environment.staticData) {
+      return this.demo(demoMyUploads);
+    }
     return this.http.get<VideoUpload[]>(`${this.base}/videos/uploads/mine`, {
       headers: this.authHeaders()
     });
   }
 
   adminUploads(status?: string): Observable<VideoUpload[]> {
+    if (environment.staticData) {
+      return this.demo(() => demoAllUploads(status));
+    }
     return this.http.get<VideoUpload[]>(`${this.base}/videos/uploads`, {
       params: this.p({ status }),
       headers: this.authHeaders()
@@ -264,6 +326,13 @@ export class ApiService {
   }
 
   approveUpload(id: number, note?: string): Observable<VideoUpload> {
+    if (environment.staticData) {
+      return this.demo(() => this.requireUpdate(demoUpdateUpload(id, {
+        status: 'APPROVED',
+        reviewNote: note ?? '',
+        reviewedAt: new Date().toISOString()
+      })));
+    }
     return this.http.post<VideoUpload>(
       `${this.base}/videos/uploads/${id}/approve`,
       { note },
@@ -272,6 +341,13 @@ export class ApiService {
   }
 
   rejectUpload(id: number, note?: string): Observable<VideoUpload> {
+    if (environment.staticData) {
+      return this.demo(() => this.requireUpdate(demoUpdateUpload(id, {
+        status: 'REJECTED',
+        reviewNote: note ?? '',
+        reviewedAt: new Date().toISOString()
+      })));
+    }
     return this.http.post<VideoUpload>(
       `${this.base}/videos/uploads/${id}/reject`,
       { note },
@@ -279,7 +355,22 @@ export class ApiService {
     );
   }
 
+  updateUpload(
+    id: number,
+    meta: { title: string; category?: string; description?: string }
+  ): Observable<VideoUpload> {
+    if (environment.staticData) {
+      return this.demo(() => this.requireUpdate(demoUpdateUpload(id, meta)));
+    }
+    return this.http.put<VideoUpload>(`${this.base}/videos/uploads/${id}`, meta, {
+      headers: this.authHeaders()
+    });
+  }
+
   takedownUpload(id: number): Observable<VideoUpload> {
+    if (environment.staticData) {
+      return this.demo(() => this.requireUpdate(demoUpdateUpload(id, { status: 'TAKEN_DOWN' })));
+    }
     return this.http.post<VideoUpload>(
       `${this.base}/videos/uploads/${id}/takedown`,
       {},
@@ -288,6 +379,13 @@ export class ApiService {
   }
 
   resubmitUpload(id: number): Observable<VideoUpload> {
+    if (environment.staticData) {
+      return this.demo(() => this.requireUpdate(demoUpdateUpload(id, {
+        status: 'PENDING',
+        reviewNote: '',
+        reviewedAt: null
+      })));
+    }
     return this.http.post<VideoUpload>(
       `${this.base}/videos/uploads/${id}/resubmit`,
       {},
@@ -296,6 +394,9 @@ export class ApiService {
   }
 
   deleteUpload(id: number): Observable<void> {
+    if (environment.staticData) {
+      return this.demo(() => demoDeleteUpload(id));
+    }
     return this.http.delete<void>(`${this.base}/videos/uploads/${id}`, {
       headers: this.authHeaders()
     });
@@ -323,15 +424,30 @@ export class ApiService {
   }
 
   posts(type?: string, page = 0, size = 12): Observable<Page<Post>> {
-    return this.http.get<Page<Post>>(`${this.base}/posts`, {
+    const req = this.http.get<Page<Post>>(`${this.base}/posts`, {
       params: this.p({ type, page, size })
     });
+    if (environment.staticData) {
+      return req.pipe(
+        map((p) => {
+          const local = demoAllPosts('APPROVED').filter((x) => !type || x.type === type);
+          if (page !== 0 || local.length === 0) {
+            return p;
+          }
+          return { ...p, content: [...local, ...p.content], totalElements: p.totalElements + local.length };
+        })
+      );
+    }
+    return req;
   }
 
   createPost(
-    meta: { type: string; title: string; category?: string; body?: string },
+    meta: { type: Post['type']; title: string; category?: string; body?: string },
     file?: File | null
   ) {
+    if (environment.staticData) {
+      return this.demo(() => demoAddPost(meta, file));
+    }
     const fd = new FormData();
     fd.append('type', meta.type);
     fd.append('title', meta.title);
@@ -348,6 +464,9 @@ export class ApiService {
   }
 
   myPosts(page = 0, size = 12): Observable<Page<Post>> {
+    if (environment.staticData) {
+      return this.demo(() => this.toPage(demoMyPosts(), page, size));
+    }
     return this.http.get<Page<Post>>(`${this.base}/posts/mine`, {
       headers: this.authHeaders(),
       params: this.p({ page, size })
@@ -355,6 +474,9 @@ export class ApiService {
   }
 
   pendingPosts(page = 0, size = 20): Observable<Page<Post>> {
+    if (environment.staticData) {
+      return this.demo(() => this.toPage(demoAllPosts('PENDING'), page, size));
+    }
     return this.http.get<Page<Post>>(`${this.base}/posts/pending`, {
       headers: this.authHeaders(),
       params: this.p({ page, size })
@@ -362,6 +484,13 @@ export class ApiService {
   }
 
   reviewPost(id: number, approve: boolean, note?: string): Observable<Post> {
+    if (environment.staticData) {
+      return this.demo(() => this.requireUpdate(demoUpdatePost(id, {
+        status: approve ? 'APPROVED' : 'REJECTED',
+        reviewNote: note ?? '',
+        reviewedAt: new Date().toISOString()
+      })));
+    }
     return this.http.post<Post>(
       `${this.base}/posts/${id}/${approve ? 'approve' : 'reject'}`,
       { note },
@@ -370,6 +499,12 @@ export class ApiService {
   }
 
   post(id: number): Observable<Post> {
+    if (environment.staticData) {
+      const local = demoFindPost(id);
+      if (local) {
+        return of(local);
+      }
+    }
     return this.http.get<Post>(`${this.base}/posts/${id}`, {
       headers: this.authHeaders()
     });
@@ -411,13 +546,29 @@ export class ApiService {
   }
 
   managePosts(status?: string): Observable<Post[]> {
+    if (environment.staticData) {
+      return this.demo(() => demoAllPosts(status));
+    }
     return this.http.get<Post[]>(`${this.base}/posts/manage`, {
       params: this.p({ status }),
       headers: this.authHeaders()
     });
   }
 
+  updatePost(
+    id: number,
+    meta: { title: string; category?: string; body?: string }
+  ): Observable<Post> {
+    if (environment.staticData) {
+      return this.demo(() => this.requireUpdate(demoUpdatePost(id, meta)));
+    }
+    return this.http.put<Post>(`${this.base}/posts/${id}`, meta, { headers: this.authHeaders() });
+  }
+
   takedownPost(id: number): Observable<Post> {
+    if (environment.staticData) {
+      return this.demo(() => this.requireUpdate(demoUpdatePost(id, { status: 'TAKEN_DOWN' })));
+    }
     return this.http.post<Post>(
       `${this.base}/posts/${id}/takedown`,
       {},
@@ -426,6 +577,13 @@ export class ApiService {
   }
 
   resubmitPost(id: number): Observable<Post> {
+    if (environment.staticData) {
+      return this.demo(() => this.requireUpdate(demoUpdatePost(id, {
+        status: 'PENDING',
+        reviewNote: '',
+        reviewedAt: null
+      })));
+    }
     return this.http.post<Post>(
       `${this.base}/posts/${id}/resubmit`,
       {},
@@ -434,6 +592,9 @@ export class ApiService {
   }
 
   deletePost(id: number): Observable<void> {
+    if (environment.staticData) {
+      return this.demo(() => demoDeletePost(id));
+    }
     return this.http.delete<void>(`${this.base}/posts/${id}`, {
       headers: this.authHeaders()
     });
@@ -463,6 +624,33 @@ export class ApiService {
     return this.http.post<void>(`${this.base}/members/logout`, {}, {
       headers: this.authHeaders()
     });
+  }
+
+  // ===== 靜態展示模式：localStorage 模擬寫入 =====
+
+  private demo<T>(fn: () => T): Observable<T> {
+    if (!localStorage.getItem('star-member')) {
+      return throwError(() => new HttpErrorResponse({ status: 401 }));
+    }
+    return defer(() => of(fn())).pipe(delay(300));
+  }
+
+  private requireUpdate<T>(item: T | undefined): T {
+    if (!item) {
+      throw new HttpErrorResponse({ status: 404 });
+    }
+    return item;
+  }
+
+  private toPage<T>(list: T[], page: number, size: number): Page<T> {
+    const start = page * size;
+    return {
+      content: list.slice(start, start + size),
+      totalElements: list.length,
+      totalPages: Math.max(1, Math.ceil(list.length / size)),
+      number: page,
+      size
+    };
   }
 
   private authHeaders(): HttpHeaders {

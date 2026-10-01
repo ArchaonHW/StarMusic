@@ -1,3 +1,4 @@
 export const environment = {
-  apiBase: '/api'
+  apiBase: '/api',
+  staticData: false
 };

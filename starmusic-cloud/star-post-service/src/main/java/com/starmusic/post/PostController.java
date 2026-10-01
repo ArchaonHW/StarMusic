@@ -38,6 +38,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/api/posts")
@@ -96,6 +97,38 @@ public class PostController {
     private static final int MAX_COMMENT = 500;
     private static final int MAX_PAGE_SIZE = 50;
     private static final int MAX_POSTS_PER_DAY = 10;
+    private static final long BUILTIN_ID_BASE = 900000;
+
+    private static final List<PostDto> BUILTIN_POSTS = List.of(
+            new PostDto(BUILTIN_ID_BASE + 1, "AUDIO", "《余生溫柔全部給你》", "原創音樂",
+                    """
+                    詞曲：梁宸瑋
+                    演唱：梁宸瑋
+
+                    【主歌 1】
+                    微風輕輕撞進心懷
+                    星光落在你的劉海
+                    不用太多華麗對白
+                    一眼就把心事打開
+
+                    【主歌 2】
+                    牽手走過人海徘徊
+                    平凡日常也很精彩
+                    你的溫柔漫進未來
+                    餘生只想和你依賴
+
+                    【副歌】
+                    慢慢喜歡你 慢慢靠近你
+                    每分每秒都想珍惜
+                    不用驚天動地 不用太多祕密
+                    有你就是最好的風景
+                    慢慢愛著你 慢慢陪著你
+                    歲歲年年不離不棄
+                    陽光剛好愜意 心跳剛好默契
+                    餘生溫柔全部給你
+                    """,
+                    "/media/yusheng-wenrou.mp3", "余生溫柔全部給你.mp3", "梁宸瑋",
+                    PostEntity.APPROVED, null, 0, "2026-10-01T02:00:00Z", null));
 
     private final PostRepository posts;
     private final PostLikeRepository likes;
@@ -197,7 +230,21 @@ public class PostController {
                 ? posts.findByStatus(PostEntity.APPROVED, pageable)
                 : posts.findByStatusAndType(
                         PostEntity.APPROVED, type.toUpperCase(Locale.ROOT), pageable);
-        return withLikes(result);
+        Page<PostDto> dtos = withLikes(result);
+        if (page != 0) {
+            return dtos;
+        }
+        List<PostDto> builtins = BUILTIN_POSTS.stream()
+                .filter(b -> type == null || type.isBlank()
+                        || b.type().equalsIgnoreCase(type))
+                .map(this::withBuiltinLikes)
+                .toList();
+        if (builtins.isEmpty()) {
+            return dtos;
+        }
+        return new PageImpl<>(
+                Stream.concat(builtins.stream(), dtos.getContent().stream()).toList(),
+                pageable, dtos.getTotalElements() + builtins.size());
     }
 
     @GetMapping("/mine")
@@ -237,6 +284,12 @@ public class PostController {
     public PostDto detail(@PathVariable long id,
                           @RequestHeader(value = "X-User-Id", required = false) Long userId,
                           @RequestHeader(value = "X-User-Role", required = false) String role) {
+        if (id >= BUILTIN_ID_BASE) {
+            return builtinPost(id)
+                    .map(this::withBuiltinLikes)
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.NOT_FOUND, "投稿不存在"));
+        }
         PostEntity p = findPost(id);
         requireVisible(p, userId, role);
         return PostDto.of(p, likes.countByPostId(id));
@@ -284,6 +337,7 @@ public class PostController {
     public PostDto takedown(@PathVariable long id,
                             @RequestHeader(value = "X-User-Id", required = false) Long userId,
                             @RequestHeader(value = "X-User-Role", required = false) String role) {
+        requireManaged(id);
         PostEntity p = findPost(id);
         requireOwnerOrAdmin(p, userId, role);
         if (!PostEntity.APPROVED.equals(p.getStatus())) {
@@ -298,6 +352,7 @@ public class PostController {
     public PostDto resubmit(@PathVariable long id,
                             @RequestHeader(value = "X-User-Id", required = false) Long userId) {
         requireLogin(userId);
+        requireManaged(id);
         PostEntity p = findPost(id);
         if (!userId.equals(p.getMemberId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "僅投稿本人可重新送審");
@@ -317,6 +372,7 @@ public class PostController {
     public void delete(@PathVariable long id,
                        @RequestHeader(value = "X-User-Id", required = false) Long userId,
                        @RequestHeader(value = "X-User-Role", required = false) String role) {
+        requireManaged(id);
         PostEntity p = findPost(id);
         requireOwnerOrAdmin(p, userId, role);
         comments.deleteByPostId(id);
@@ -420,8 +476,42 @@ public class PostController {
     }
 
     private PostEntity findPost(long id) {
+        if (id >= BUILTIN_ID_BASE) {
+            return builtinPost(id)
+                    .map(this::builtinEntity)
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.NOT_FOUND, "投稿不存在"));
+        }
         return posts.findById(id).orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "投稿不存在"));
+    }
+
+    private Optional<PostDto> builtinPost(long id) {
+        return BUILTIN_POSTS.stream().filter(b -> b.id() == id).findFirst();
+    }
+
+    private PostDto withBuiltinLikes(PostDto b) {
+        return new PostDto(b.id(), b.type(), b.title(), b.category(), b.body(), b.mediaUrl(),
+                b.originalFilename(), b.author(), b.status(), b.reviewNote(),
+                likes.countByPostId(b.id()), b.createdAt(), b.reviewedAt());
+    }
+
+    private PostEntity builtinEntity(PostDto b) {
+        PostEntity e = new PostEntity();
+        e.setId(b.id());
+        e.setMemberId(0L);
+        e.setAuthor(b.author());
+        e.setType(b.type());
+        e.setTitle(b.title());
+        e.setCategory(b.category());
+        e.setStatus(b.status());
+        return e;
+    }
+
+    private void requireManaged(long id) {
+        if (id >= BUILTIN_ID_BASE) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "內建內容不支援此操作");
+        }
     }
 
     private void requireLogin(Long userId) {

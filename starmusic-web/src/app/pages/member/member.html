@@ -22,6 +22,7 @@
 
     <h3 class="sub-title">帳務明細</h3>
     @if (transactions().length > 0) {
+      <div class="table-scroll">
       <table class="tx-table">
         <thead>
           <tr><th>時間</th><th>類型</th><th>金額</th><th>餘額</th><th>說明</th></tr>
@@ -40,6 +41,7 @@
           }
         </tbody>
       </table>
+      </div>
     } @else {
       <p class="empty">尚無帳務紀錄</p>
     }
@@ -110,6 +112,9 @@
           {{ mode === 'login' ? '登入' : '註冊' }}
         </button>
       </form>
+      @if (staticMode) {
+        <button class="btn ghost" type="button" (click)="resetDemo()">重置展示資料</button>
+      }
     </div>
   }
 </div>

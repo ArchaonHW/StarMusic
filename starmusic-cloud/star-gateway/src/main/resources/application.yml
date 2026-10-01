@@ -15,7 +15,8 @@ spring:
           globalcors:
             cors-configurations:
               '[/**]':
-                allowed-origins: "http://localhost:4200"
+                # 允許的前端來源，逗號分隔；可用環境變數覆寫
+                allowed-origins: "${STARMUSIC_ALLOWED_ORIGINS:http://localhost:4200,http://9678no6i.vhw13.pumo.com.tw}"
                 allowed-methods: "GET,POST,PUT,DELETE,OPTIONS"
                 allowed-headers: "Content-Type,Authorization"
                 allow-credentials: false

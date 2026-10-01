@@ -141,3 +141,53 @@ main {
     font-size: 12px;
   }
 }
+
+@media (max-width: 900px) {
+  .header-inner {
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    height: auto;
+    padding: 10px 0;
+  }
+
+  .logo {
+    font-size: 16px;
+
+    small {
+      display: none;
+    }
+  }
+
+  .main-nav {
+    order: 3;
+    flex-basis: 100%;
+    overflow-x: auto;
+    padding-bottom: 4px;
+
+    a {
+      white-space: nowrap;
+      padding: 6px 12px;
+      font-size: 13.5px;
+    }
+  }
+
+  .search-box {
+    flex: 1;
+    min-width: 0;
+
+    input {
+      width: 100%;
+      min-width: 0;
+    }
+  }
+
+  .header-actions {
+    gap: 10px;
+  }
+
+  .member-link {
+    padding: 6px 12px;
+    font-size: 12.5px;
+    white-space: nowrap;
+  }
+}

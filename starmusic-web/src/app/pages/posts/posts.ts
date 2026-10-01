@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { Post } from '../../models';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-posts',
@@ -30,6 +31,11 @@ export class PostsPage implements OnInit {
   protected postFile: File | null = null;
   protected readonly uploading = signal(false);
   protected readonly msg = signal('');
+  protected readonly staticMode = environment.staticData;
+  protected editingId: number | null = null;
+  protected editTitle = '';
+  protected editCategory = '';
+  protected editBody = '';
 
   readonly types: { value: Post['type']; label: string; accept: string }[] = [
     { value: 'VIDEO', label: '影片', accept: 'video/*' },
@@ -114,6 +120,39 @@ export class PostsPage implements OnInit {
     return { PENDING: '待審核', APPROVED: '已上架', REJECTED: '已退回', TAKEN_DOWN: '已下架' }[
       status
     ] ?? status;
+  }
+
+  startEdit(p: Post): void {
+    this.editingId = p.id;
+    this.editTitle = p.title;
+    this.editCategory = p.category;
+    this.editBody = p.body;
+  }
+
+  cancelEdit(): void {
+    this.editingId = null;
+  }
+
+  saveEdit(id: number): void {
+    if (!this.editTitle.trim()) {
+      this.msg.set('標題不能空白');
+      return;
+    }
+    this.api
+      .updatePost(id, {
+        title: this.editTitle.trim(),
+        category: this.editCategory || undefined,
+        body: this.editBody || undefined
+      })
+      .subscribe({
+        next: () => {
+          this.editingId = null;
+          this.msg.set('已更新');
+          this.loadMine();
+          this.load();
+        },
+        error: (e) => this.msg.set(e.error?.message ?? '更新失敗')
+      });
   }
 
   takedown(id: number): void {

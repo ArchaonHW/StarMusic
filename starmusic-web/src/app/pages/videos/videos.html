@@ -25,21 +25,41 @@
         <ul class="my-uploads">
           @for (u of myUploads(); track u.id) {
             <li>
-              <span class="st" [class]="'st ' + u.status">{{ statusLabel(u.status) }}</span>
-              {{ u.title }}
-              <span class="dim">{{ u.createdAt | date: 'MM/dd HH:mm' }}</span>
-              @if (u.status === 'REJECTED' && u.reviewNote) {
-                <span class="note">退回原因：{{ u.reviewNote }}</span>
+              @if (editingId === u.id) {
+                <div class="edit-row">
+                  <input [(ngModel)]="editTitle" placeholder="影片標題" />
+                  <select [(ngModel)]="editCategory">
+                    <option value="">選擇分類</option>
+                    @for (c of categories(); track c) {
+                      <option [value]="c">{{ c }}</option>
+                    }
+                  </select>
+                  <input [(ngModel)]="editDesc" placeholder="影片簡介" />
+                  <span class="row-actions">
+                    <button class="btn-mini" (click)="saveEdit(u.id)">儲存</button>
+                    <button class="btn-mini" (click)="cancelEdit()">取消</button>
+                  </span>
+                </div>
+              } @else {
+                <span class="st" [class]="'st ' + u.status">{{ statusLabel(u.status) }}</span>
+                {{ u.title }}
+                <span class="dim">{{ u.createdAt | date: 'MM/dd HH:mm' }}</span>
+                @if (u.status === 'REJECTED' && u.reviewNote) {
+                  <span class="note">退回原因：{{ u.reviewNote }}</span>
+                }
+                <span class="row-actions">
+                  @if (staticMode) {
+                    <button class="btn-mini" (click)="startEdit(u)">編輯</button>
+                  }
+                  @if (u.status === 'APPROVED') {
+                    <button class="btn-mini" (click)="takedown(u.id)">下架</button>
+                  }
+                  @if (u.status === 'TAKEN_DOWN' || u.status === 'REJECTED') {
+                    <button class="btn-mini" (click)="resubmit(u.id)">重新送審</button>
+                  }
+                  <button class="btn-mini danger" (click)="remove(u.id)">刪除</button>
+                </span>
               }
-              <span class="row-actions">
-                @if (u.status === 'APPROVED') {
-                  <button class="btn-mini" (click)="takedown(u.id)">下架</button>
-                }
-                @if (u.status === 'TAKEN_DOWN' || u.status === 'REJECTED') {
-                  <button class="btn-mini" (click)="resubmit(u.id)">重新送審</button>
-                }
-                <button class="btn-mini danger" (click)="remove(u.id)">刪除</button>
-              </span>
             </li>
           }
         </ul>

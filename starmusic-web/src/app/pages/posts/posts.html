@@ -32,22 +32,37 @@
         <ul class="my-posts">
           @for (p of myPosts(); track p.id) {
             <li>
-              <span class="st" [class]="'st ' + p.status">{{ statusLabel(p.status) }}</span>
-              <span class="tag">{{ typeLabel(p.type) }}</span>
-              {{ p.title }}
-              <span class="dim">{{ p.createdAt | date: 'MM/dd HH:mm' }}</span>
-              @if (p.status === 'REJECTED' && p.reviewNote) {
-                <span class="note">退回原因：{{ p.reviewNote }}</span>
+              @if (editingId === p.id) {
+                <div class="edit-row">
+                  <input [(ngModel)]="editTitle" placeholder="標題" />
+                  <input [(ngModel)]="editCategory" placeholder="分類" />
+                  <input [(ngModel)]="editBody" placeholder="簡介" />
+                  <span class="row-actions">
+                    <button class="btn-mini" (click)="saveEdit(p.id)">儲存</button>
+                    <button class="btn-mini" (click)="cancelEdit()">取消</button>
+                  </span>
+                </div>
+              } @else {
+                <span class="st" [class]="'st ' + p.status">{{ statusLabel(p.status) }}</span>
+                <span class="tag">{{ typeLabel(p.type) }}</span>
+                {{ p.title }}
+                <span class="dim">{{ p.createdAt | date: 'MM/dd HH:mm' }}</span>
+                @if (p.status === 'REJECTED' && p.reviewNote) {
+                  <span class="note">退回原因：{{ p.reviewNote }}</span>
+                }
+                <span class="row-actions">
+                  @if (staticMode) {
+                    <button class="btn-mini" (click)="startEdit(p)">編輯</button>
+                  }
+                  @if (p.status === 'APPROVED') {
+                    <button class="btn-mini" (click)="takedown(p.id)">下架</button>
+                  }
+                  @if (p.status === 'TAKEN_DOWN' || p.status === 'REJECTED') {
+                    <button class="btn-mini" (click)="resubmit(p.id)">重新送審</button>
+                  }
+                  <button class="btn-mini danger" (click)="remove(p.id)">刪除</button>
+                </span>
               }
-              <span class="row-actions">
-                @if (p.status === 'APPROVED') {
-                  <button class="btn-mini" (click)="takedown(p.id)">下架</button>
-                }
-                @if (p.status === 'TAKEN_DOWN' || p.status === 'REJECTED') {
-                  <button class="btn-mini" (click)="resubmit(p.id)">重新送審</button>
-                }
-                <button class="btn-mini danger" (click)="remove(p.id)">刪除</button>
-              </span>
             </li>
           }
         </ul>

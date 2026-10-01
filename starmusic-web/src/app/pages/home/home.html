@@ -48,6 +48,7 @@
 }
 
 <div class="container">
+  @if (hotVideos().length > 0) {
   <h2 class="section-title">熱播影視</h2>
   <div class="grid">
     @for (v of hotVideos(); track v.id) {
@@ -69,6 +70,49 @@
       </a>
     }
   </div>
+
+  }
+
+  <h2 class="section-title">電視新聞 LIVE</h2>
+  <div class="grid tv-news">
+    @for (s of tvNewsStations; track s.id) {
+      <a class="card" [href]="s.url" target="_blank" rel="noopener">
+        <div class="card-body channel">
+          <div class="freq">{{ s.tag }}</div>
+          <h3>{{ s.name }}</h3>
+          <p>{{ s.slogan }}</p>
+          <div class="meta">
+            <span>官方直播</span>
+            <span class="live-dot">● LIVE</span>
+          </div>
+        </div>
+      </a>
+    }
+  </div>
+
+  @if (latestNews().length > 0) {
+    <h2 class="section-title">最新新聞</h2>
+    <div class="grid news">
+      @for (a of latestNews(); track a.id) {
+        <a class="card" [routerLink]="['/news', a.id]">
+          <div class="thumb">
+            @if (a.breaking) {
+              <span class="badge">快訊</span>
+            }
+            {{ a.category }}
+          </div>
+          <div class="card-body">
+            <div class="meta">
+              <span class="src">{{ a.source }}</span>
+              <time>{{ a.publishedAt | date: 'MM/dd HH:mm' }}</time>
+            </div>
+            <h3>{{ a.title }}</h3>
+            <p>{{ a.summary }}</p>
+          </div>
+        </a>
+      }
+    </div>
+  }
 
   <h2 class="section-title">星光電台 LIVE</h2>
   <div class="grid">
