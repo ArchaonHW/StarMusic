@@ -1,0 +1,22 @@
+[Unit]
+Description=StarMusic %i
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=starmusic
+Group=starmusic
+# 每個服務需要獨立工作目錄(H2 data/、uploads/ 以相對路徑落地)
+WorkingDirectory=/opt/starmusic/run/%i
+EnvironmentFile=/opt/starmusic/starmusic.env
+ExecStart=/usr/bin/java -Xmx384m -jar /opt/starmusic/jars/%i-1.0.0.jar
+SuccessExitStatus=143
+Restart=on-failure
+RestartSec=5
+# 基本沙箱
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
