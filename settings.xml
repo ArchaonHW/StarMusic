@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- StarMusic 專用 Maven settings：沿用本機倉庫與 mirror，但不帶 minggo-rts 的
+     spring-cloud/spring-boot 版本覆寫（會覆蓋專案 pom 的 <properties>）。 -->
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 
+          https://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+    <localRepository>F:/maven-repo</localRepository>
+
+    <mirrors>
+        <mirror>
+            <id>aliyun-central</id>
+            <mirrorOf>central</mirrorOf>
+            <name>Aliyun Central</name>
+            <url>https://maven.aliyun.com/repository/central</url>
+        </mirror>
+        <mirror>
+            <id>aliyun-public</id>
+            <mirrorOf>public</mirrorOf>
+            <name>Aliyun Public</name>
+            <url>https://maven.aliyun.com/repository/public</url>
+        </mirror>
+    </mirrors>
+</settings>

@@ -41,3 +41,6 @@ data/
 uploads/
 *.mv.db
 *.trace.db
+
+# Local run logs & pid file
+logs/
