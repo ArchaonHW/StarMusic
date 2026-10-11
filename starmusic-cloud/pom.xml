@@ -29,6 +29,7 @@
         <module>star-member-service</module>
         <module>star-search-service</module>
         <module>star-post-service</module>
+        <module>starmusic-app</module>
     </modules>
 
     <properties>

@@ -44,3 +44,9 @@ uploads/
 
 # Local run logs & pid file
 logs/
+
+# Monolith static web dir (copied Angular dist)
+/starmusic-cloud/web/
+
+# Windows bash redirect artifact
+nul

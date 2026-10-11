@@ -230,6 +230,18 @@ export class AdminPage {
     }
   }
 
+  async onNewsFile(event: Event): Promise<void> {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) {
+      return;
+    }
+    try {
+      this.newsForm.imageUrl = await compressImage(file, 1200, 0.85);
+    } catch {
+      this.error.set('無法讀取圖片');
+    }
+  }
+
   editBanner(b: Banner): void {
     this.editingBannerId = b.id;
     this.bannerForm = {

@@ -66,6 +66,31 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "aws": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.aws.ts"
+                }
+              ],
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "1MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "6kB",
+                  "maximumError": "10kB"
+                }
+              ],
+              "outputHashing": "all",
+              "outputPath": {
+                "base": "dist/starmusic-web-aws",
+                "browser": ""
+              }
             }
           },
           "defaultConfiguration": "production"

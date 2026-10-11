@@ -1,0 +1,31 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: starmusic-app
+  datasource:
+    url: jdbc:h2:file:${STARMUSIC_DB:./data/starmusicdb}
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
+  web:
+    resources:
+      # 設為 Angular dist 目錄可同進程直接伺服前端（hash 路由免 rewrite）
+      static-locations: ${STARMUSIC_STATIC_DIR:classpath:/static/}
+
+starmusic:
+  jwt-secret: ${STARMUSIC_JWT_SECRET:starmusic-dev-secret-do-not-use-in-prod-0123456789}
+  upload-dir: ${STARMUSIC_UPLOAD_DIR:uploads}
+  allowed-origins: ${STARMUSIC_ALLOWED_ORIGINS:http://localhost:4200,http://9678no6i.vhw13.pumo.com.tw}
+
+logging:
+  file:
+    name: logs/starmusic-app.log

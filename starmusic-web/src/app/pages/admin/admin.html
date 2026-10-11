@@ -318,7 +318,21 @@
               <input [(ngModel)]="newsForm.summary" placeholder="摘要" />
               <input [(ngModel)]="newsForm.author" placeholder="作者" />
               <input [(ngModel)]="newsForm.source" placeholder="來源" />
-              <input [(ngModel)]="newsForm.imageUrl" placeholder="主圖 URL" />
+              <input
+                class="full"
+                [ngModel]="newsForm.imageUrl.startsWith('data:') ? '（已上傳圖片）' : newsForm.imageUrl"
+                (ngModelChange)="newsForm.imageUrl = $event"
+                placeholder="主圖網址，或使用下方上傳"
+              />
+              <label class="file-label full">
+                上傳主圖（自動壓縮）
+                <input type="file" accept="image/*" (change)="onNewsFile($event)" />
+              </label>
+              @if (newsForm.imageUrl) {
+                <div class="banner-preview full">
+                  <img [src]="newsForm.imageUrl" alt="主圖預覽" />
+                </div>
+              }
               <textarea [(ngModel)]="newsForm.content" rows="4" placeholder="新聞內文"></textarea>
               <label class="check">
                 <input type="checkbox" [(ngModel)]="newsForm.breaking" /> 設為快訊
