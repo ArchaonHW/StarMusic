@@ -117,6 +117,16 @@
   .hero-inner {
     width: 100%;
   }
+
+  .hero-banner {
+    display: block;
+    max-width: 480px;
+    width: 100%;
+    height: auto;
+    margin: 22px 0 26px;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  }
 }
 
 @media (max-width: 640px) {

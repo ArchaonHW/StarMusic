@@ -314,7 +314,12 @@
             <h3 class="form-title">{{ editingNewsId ? '編輯新聞' : '新增新聞' }}</h3>
             <div class="content-form">
               <input [(ngModel)]="newsForm.title" placeholder="新聞標題（必填）" />
-              <input [(ngModel)]="newsForm.category" placeholder="分類（如：娛樂、影視）" />
+              <input [(ngModel)]="newsForm.category" list="newsCategoryOptions" placeholder="分類" />
+              <datalist id="newsCategoryOptions">
+                @for (c of newsCategories(); track c) {
+                  <option [value]="c"></option>
+                }
+              </datalist>
               <input [(ngModel)]="newsForm.summary" placeholder="摘要" />
               <input [(ngModel)]="newsForm.author" placeholder="作者" />
               <input [(ngModel)]="newsForm.source" placeholder="來源" />

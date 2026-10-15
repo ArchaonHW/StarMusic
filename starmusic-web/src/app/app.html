@@ -11,23 +11,11 @@
       <a routerLink="/news" routerLinkActive="active">新聞</a>
       <a routerLink="/magazines" routerLinkActive="active">雜誌</a>
       <a routerLink="/shop" routerLinkActive="active">購物</a>
-      <a routerLink="/posts" routerLinkActive="active">投稿</a>
       @if (auth.member()?.role === 'ADMIN') {
         <a routerLink="/admin" routerLinkActive="active">後台</a>
       }
     </nav>
-    <form class="search-box" (ngSubmit)="search()">
-      <input type="search" name="keyword" [(ngModel)]="keyword"
-             placeholder="搜尋影片、新聞、雜誌、商品…" />
-      <button type="submit" aria-label="搜尋">🔍</button>
-    </form>
     <div class="header-actions">
-      <a class="cart-link" routerLink="/cart">
-        🛒
-        @if (cartService.cart().items.length > 0) {
-          <span class="cart-count">{{ cartService.cart().items.length }}</span>
-        }
-      </a>
       <a class="member-link" routerLink="/member">
         @if (auth.member(); as m) {
           {{ m.nickname }}
@@ -45,6 +33,7 @@
 
 <footer class="site-footer">
   <div class="container">
+    <img class="footer-logo" src="/media/star-logo.jpg" alt="星光流行音樂網 Star Music Radio" />
     <p>★ 星光全球娛樂台 Star Music Global Entertainment</p>
     <p class="dim">影視 · 電台 · 新聞 · 電子雜誌 · 購物 — 網站雛形 Demo</p>
     <p class="visitor-counter">

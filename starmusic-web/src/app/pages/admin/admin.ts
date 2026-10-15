@@ -50,6 +50,7 @@ export class AdminPage {
   protected readonly allUploads = signal<VideoUpload[]>([]);
   protected readonly banners = signal<Banner[]>([]);
   protected readonly managedNews = signal<Article[]>([]);
+  protected readonly newsCategories = signal<string[]>([]);
   protected readonly managedMagazines = signal<Magazine[]>([]);
   protected readonly managedProducts = signal<Product[]>([]);
   protected readonly allMembers = signal<Member[]>([]);
@@ -513,6 +514,7 @@ export class AdminPage {
     this.load(this.api.adminUploads(), this.allUploads);
     this.load(this.api.managedBanners(), this.banners);
     this.load(this.api.managedNews(), this.managedNews);
+    this.load(this.api.newsCategories(), this.newsCategories);
     this.load(this.api.managedMagazines(), this.managedMagazines);
     this.load(this.api.managedProducts(), this.managedProducts);
     this.load(this.api.members(), this.allMembers);
