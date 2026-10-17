@@ -1,4 +1,4 @@
-import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit, AfterViewInit, signal, ViewChild, ElementRef } from '@angular/core';
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
@@ -18,8 +18,10 @@ interface TvNewsStation {
   templateUrl: './home.html',
   styleUrl: './home.scss'
 })
-export class Home implements OnInit, OnDestroy {
+export class Home implements OnInit, AfterViewInit, OnDestroy {
   private readonly api = inject(ApiService);
+
+  @ViewChild('promoVideo') promoVideo!: ElementRef<HTMLVideoElement>;
 
   protected readonly breaking = signal<Article[]>([]);
   protected readonly hotVideos = signal<Video[]>([]);
@@ -82,6 +84,15 @@ export class Home implements OnInit, OnDestroy {
     this.api.latestMagazines().subscribe((m) => this.latestMagazines.set(m.slice(0, 6)));
     this.api.news().subscribe((n) => this.latestNews.set(n.slice(0, 6)));
     this.api.products().subscribe((p) => this.products.set(p.slice(0, 8)));
+  }
+
+  ngAfterViewInit(): void {
+    // 嘗試以程式方式啟動影片播放
+    if (this.promoVideo) {
+      this.promoVideo.nativeElement.play().catch((error) => {
+        console.log('Autoplay prevented:', error);
+      });
+    }
   }
 
   ngOnDestroy(): void {
