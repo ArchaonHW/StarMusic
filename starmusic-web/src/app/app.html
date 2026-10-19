@@ -15,15 +15,6 @@
         <a routerLink="/admin" routerLinkActive="active">後台</a>
       }
     </nav>
-    <div class="header-actions">
-      <a class="member-link" routerLink="/member">
-        @if (auth.member(); as m) {
-          {{ m.nickname }}
-        } @else {
-          登入 / 註冊
-        }
-      </a>
-    </div>
   </div>
 </header>
 
