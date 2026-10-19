@@ -115,7 +115,11 @@ export class AuthService {
   private users(): StoredUser[] {
     let users: StoredUser[] = [];
     try {
-      users = JSON.parse(localStorage.getItem(USERS_KEY) ?? '[]');
+      const stored: unknown = JSON.parse(localStorage.getItem(USERS_KEY) ?? '[]');
+      users = Array.isArray(stored) ? stored.filter((u): u is StoredUser =>
+        !!u && typeof u.pw === 'string' && !!u.member &&
+        typeof u.member.username === 'string' && Number.isFinite(u.member.id)
+      ) : [];
     } catch {
       users = [];
     }
@@ -171,7 +175,8 @@ export class AuthService {
 
   private readTx(): Record<number, AccountTransaction[]> {
     try {
-      return JSON.parse(localStorage.getItem(TX_KEY) ?? '{}');
+      const stored = JSON.parse(localStorage.getItem(TX_KEY) ?? '{}');
+      return stored && typeof stored === 'object' && !Array.isArray(stored) ? stored : {};
     } catch {
       return {};
     }
