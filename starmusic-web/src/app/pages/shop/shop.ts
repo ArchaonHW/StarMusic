@@ -2,6 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { ApiService } from '../../core/api.service';
 import { CartService } from '../../core/cart.service';
 import { Product } from '../../models';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-shop',
@@ -9,6 +10,7 @@ import { Product } from '../../models';
   styleUrl: './shop.scss'
 })
 export class Shop implements OnInit {
+  protected readonly staticMode = environment.staticData;
   private readonly api = inject(ApiService);
   protected readonly cartService = inject(CartService);
 
@@ -28,6 +30,7 @@ export class Shop implements OnInit {
   }
 
   addToCart(p: Product): void {
+    if (this.staticMode) return;
     this.cartService.add(p.id).subscribe(() => {
       this.addedId.set(p.id);
       setTimeout(() => this.addedId.set(null), 1500);

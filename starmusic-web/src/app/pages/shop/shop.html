@@ -32,6 +32,8 @@
             @if (p.buyUrl) {
               <span class="stock">蝦皮購物</span>
               <a class="btn" [href]="p.buyUrl" target="_blank" rel="noopener">前往購買</a>
+            } @else if (staticMode) {
+              <span class="stock">商品展示中，暫未開放線上購買</span>
             } @else {
               <span class="stock">庫存 {{ p.stock }}</span>
               <button class="btn" (click)="addToCart(p)">

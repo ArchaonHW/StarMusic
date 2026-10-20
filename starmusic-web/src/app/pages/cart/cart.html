@@ -1,7 +1,12 @@
 <div class="container page">
   <h2 class="section-title">購物車</h2>
 
-  @if (order(); as o) {
+  @if (staticMode) {
+    <div class="empty-cart">
+      <p>目前未開放購物車與結帳，可至商品頁查看購買連結。</p>
+      <a class="btn" routerLink="/shop">查看商品</a>
+    </div>
+  } @else if (order(); as o) {
     <div class="done">
       <h3>✓ 訂單成立！</h3>
       <p>訂單編號：{{ o.id }} · 金額 NT$ {{ o.total }}</p>

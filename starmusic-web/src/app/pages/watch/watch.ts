@@ -6,6 +6,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { Video, VideoComment } from '../../models';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-watch',
@@ -14,6 +15,7 @@ import { Video, VideoComment } from '../../models';
   styleUrl: './watch.scss'
 })
 export class Watch {
+  protected readonly staticMode = environment.staticData;
   private readonly api = inject(ApiService);
   private readonly sanitizer = inject(DomSanitizer);
   protected readonly auth = inject(AuthService);
@@ -56,6 +58,7 @@ export class Watch {
   }
 
   private loadInteractions(videoId: number): void {
+    if (this.staticMode) return;
     this.api.comments(videoId).subscribe({
       next: (c) => this.comments.set(c),
       error: () => this.comments.set([])
@@ -71,7 +74,7 @@ export class Watch {
 
   toggleFavorite(): void {
     const v = this.video();
-    if (!v || !this.auth.member()) {
+    if (this.staticMode || !v || !this.auth.member()) {
       return;
     }
     this.api.toggleFavorite(v.id).subscribe({
@@ -82,7 +85,7 @@ export class Watch {
   submitComment(): void {
     const v = this.video();
     const body = this.commentBody.trim();
-    if (!v || !body) {
+    if (this.staticMode || !v || !body || !this.auth.member()) {
       return;
     }
     this.api.addComment(v.id, body).subscribe({
@@ -96,6 +99,7 @@ export class Watch {
   }
 
   removeComment(id: number): void {
+    if (this.staticMode) return;
     this.api.deleteComment(id).subscribe({
       next: () => this.comments.update((list) => list.filter((c) => c.id !== id)),
       error: () => this.commentMsg.set('刪除失敗')
@@ -104,7 +108,7 @@ export class Watch {
 
   canDelete(c: VideoComment): boolean {
     const m = this.auth.member();
-    return !!m && (m.id === c.memberId || m.role === 'ADMIN');
+    return !this.staticMode && !!m && (m.id === c.memberId || m.role === 'ADMIN');
   }
 
   formatViews(views: number): string {
