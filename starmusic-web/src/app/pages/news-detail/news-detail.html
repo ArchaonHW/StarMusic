@@ -14,12 +14,17 @@
       </div>
       @if (a.imageUrls.length) {
         <img class="hero-photo" [src]="a.imageUrls[0]" [alt]="a.title" />
+      } @else if (embedUrl(); as url) {
+        <div class="video-embed">
+          <iframe [src]="url" [title]="a.title" allowfullscreen
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+        </div>
       } @else {
         <div class="hero-img">{{ a.category }}</div>
       }
       <p class="lead">{{ a.summary }}</p>
       <p class="content">{{ displayContent() }}</p>
-      @if (embedUrl(); as url) {
+      @if (a.imageUrls.length && embedUrl(); as url) {
         <div class="video-embed">
           <iframe [src]="url" title="影片" allowfullscreen
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>

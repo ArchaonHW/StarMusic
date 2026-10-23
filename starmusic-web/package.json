@@ -2,6 +2,7 @@
   "name": "starmusic-web",
   "version": "0.0.0",
   "scripts": {
+    "sync:youtube-views": "node scripts/sync-youtube-views.mjs",
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
