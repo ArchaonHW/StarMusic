@@ -39,6 +39,11 @@
       }
       <a class="btn ghost back" routerLink="/news">← 返回新聞列表</a>
     </article>
+  } @else if (loadError()) {
+    <div class="empty" role="status">
+      <p>無法載入這則新聞，請稍後再試。</p>
+      <a class="btn ghost back" routerLink="/news">← 返回新聞列表</a>
+    </div>
   } @else {
     <p class="empty">載入中…</p>
   }

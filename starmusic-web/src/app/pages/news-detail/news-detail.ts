@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, OnInit, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -13,13 +13,14 @@ const YT_PATTERN = /https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?[^\s]*v=|youtu\
   templateUrl: './news-detail.html',
   styleUrl: './news-detail.scss'
 })
-export class NewsDetail implements OnInit {
+export class NewsDetail {
   private readonly api = inject(ApiService);
   private readonly sanitizer = inject(DomSanitizer);
 
   readonly id = input.required<string>();
 
   protected readonly article = signal<Article | null>(null);
+  protected readonly loadError = signal(false);
 
   protected readonly embedUrl = computed<SafeResourceUrl | null>(() => {
     const m = this.article()?.content.match(YT_PATTERN);
@@ -32,7 +33,20 @@ export class NewsDetail implements OnInit {
     this.article()?.content.replace(YT_PATTERN, '').trim() ?? ''
   );
 
-  ngOnInit(): void {
-    this.api.article(Number(this.id())).subscribe((a) => this.article.set(a));
+  constructor() {
+    effect((onCleanup) => {
+      const id = Number(this.id());
+      this.article.set(null);
+      this.loadError.set(false);
+      if (!Number.isSafeInteger(id) || id <= 0) {
+        this.loadError.set(true);
+        return;
+      }
+      const subscription = this.api.article(id).subscribe({
+        next: (article) => this.article.set(article),
+        error: () => this.loadError.set(true)
+      });
+      onCleanup(() => subscription.unsubscribe());
+    });
   }
 }
